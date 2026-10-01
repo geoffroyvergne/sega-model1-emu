@@ -215,6 +215,13 @@ CMAKE_TAPI:FILEPATH=/Library/Developer/CommandLineTools/usr/bin/tapi
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
+//Build the unit tests
+MODEL1_BUILD_TESTS:BOOL=ON
+
+//Build with AddressSanitizer, UBSan and bounds-checked containers
+// (GCC/Clang)
+MODEL1_SANITIZE:BOOL=OFF
+
 //Log coin and start presses
 MODEL1_TRACE_INPUT:BOOL=ON
 

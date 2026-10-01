@@ -1,0 +1,300 @@
+Start testing: Oct 01 20:48 CEST
+----------------------------------------------------------
+1/2 Testing: emulator_tests
+1/2 Test: emulator_tests
+Command: "/Users/gv/dev/projects/sega-model1-emu/build/emulator_tests"
+Directory: /Users/gv/dev/projects/sega-model1-emu/build
+"emulator_tests" start time: Oct 01 20:48 CEST
+Output:
+----------------------------------------------------------
+Running emulator tests
+
+  [PASS] v60_reset_state
+  [PASS] v60_nop_advances_pc_only
+  [PASS] v60_mov_immediate_to_register
+  [PASS] v60_mov_register_to_register_keeps_flags
+  [PASS] v60_mov_memory_round_trip
+  [PASS] v60_add_positive_result_clears_flags
+  [PASS] v60_sub_r0_from_r0_sets_zero_flag
+  [PASS] v60_sub_negative_result_sets_sign_and_borrow
+  [PASS] v60_add_signed_overflow_and_carry
+  [PASS] v60_fetch_from_unmapped_address_is_logged
+  [PASS] v60_unimplemented_opcode_halts_and_logs
+  [PASS] v60_push_register_decrements_sp_then_stores
+  [PASS] v60_pop_register_loads_then_increments_sp
+  [PASS] v60_push_pop_sequence_is_last_in_first_out
+  [PASS] v60_pop_to_memory_uses_updated_sp
+  [PASS] v60_pushm_popm_register_list_with_psw
+  [PASS] v60_call_ret_round_trip
+  [PASS] v60_bsr_rsr_round_trip
+  [PASS] v60_call_with_register_target_halts
+  [PASS] v60_bz_bnz_follow_zero_flag
+  [PASS] v60_bc_bnc_follow_carry_flag
+  [PASS] v60_bv_bnv_follow_overflow_flag
+  [PASS] v60_branch_ignores_unrelated_flags
+  [PASS] v60_branch_displacements_are_signed_and_opcode_relative
+  [PASS] v60_all_conditions_against_all_flag_combinations
+  [PASS] v60_countdown_loop_with_sub_and_bnz
+  [PASS] v60_stack_overflow_below_work_ram_is_logged
+  [PASS] v60_stack_underflow_past_work_ram_is_logged
+  [PASS] v60_stack_inside_work_ram_is_silent
+  [PASS] v60_misaligned_stack_is_logged
+  [PASS] v60_displacement_modes_read_base_plus_signed_offset
+  [PASS] v60_displacement_mode_as_destination
+  [PASS] v60_add_sub_with_memory_operands
+  [PASS] v60_register_indirect_and_indirect_modes
+  [PASS] v60_autoincrement_and_autodecrement_step_by_operand_size
+  [PASS] v60_read_modify_write_applies_autoincrement_once
+  [PASS] v60_pc_relative_and_absolute_modes
+  [PASS] v60_indexed_modes_scale_index_by_operand_size
+  [PASS] v60_indexed_mode_as_destination
+  [PASS] v60_reserved_addressing_mode_halts_and_logs
+  [PASS] v60_mul_signed_results_and_overflow
+  [PASS] v60_mulu_unsigned_overflow
+  [PASS] v60_mul_with_memory_operand
+  [PASS] v60_div_quotient_sets_sign_and_zero
+  [PASS] v60_div_most_negative_by_minus_one_overflows
+  [PASS] v60_division_by_zero_is_safe
+  [PASS] v60_successful_division_clears_overflow
+  [PASS] v60_divx_quotient_and_remainder
+  [PASS] v60_test_sets_zero_and_sign_without_writing
+  [PASS] v60_updpsw_vr_boot_disables_interrupts
+  [PASS] v60_updpsw_sets_masked_bits_and_cannot_touch_top_byte
+  [PASS] v60_movea_loads_effective_address
+  [PASS] v60_movea_with_register_source_halts
+  [PASS] v60_movcfu_vr_boot_memory_fill
+  [PASS] v60_movcu_copies_and_movcsu_stops
+  [PASS] v60_unimplemented_string_suboperation_halts
+  [PASS] v60_out_in_reach_tgp_ports_in_io_space
+  [PASS] v60_out_to_unmapped_io_space_is_logged_not_fatal
+  [PASS] v60_addc_rounds_after_right_shift_like_vr_boot
+  [PASS] v60_add_then_addc_chains_64_bit_addition
+  [PASS] v60_addc_byte_flags_and_partial_register_write
+  [PASS] v60_subc_borrows_through_carry
+  [PASS] system_registers_latch_writes_and_keep_bank_register
+  [PASS] v60_out_to_serial_stub_port_is_accepted
+  [PASS] v60_cmp_halfword_vr_boot_then_branch_lower
+  [PASS] v60_cmp_word_overflow_and_byte_immediates
+  [PASS] v60_inc_dec_registers_and_flags
+  [PASS] v60_inc_word_in_memory
+  [PASS] v60_add_halfword_vr_boot
+  [PASS] v60_add_sub_byte_and_halfword_flags
+  [PASS] v60_ldpr_sets_sbr_like_vr_boot_and_moves_vector_table
+  [PASS] v60_ldpr_stpr_stack_pointers_follow_active_stack
+  [PASS] v60_ldpr_reserved_register_and_privilege_halt
+  [PASS] v60_jsr_pc_relative_like_vr_boot_and_rsr_returns
+  [PASS] v60_jsr_register_relative_and_register_operand_halts
+  [PASS] v60_movz_halfword_immediate_like_vr_boot
+  [PASS] v60_movs_movz_extend_by_size
+  [PASS] v60_dbr_fill_loop_like_vr_boot
+  [PASS] v60_dbcc_condition_stops_the_loop
+  [PASS] v60_tb_ends_table_loop_on_zero_entry_like_vr_boot
+  [PASS] v60_rot_halfword_byte_swap_like_vr_boot
+  [PASS] v60_rot_directions_and_carry
+  [PASS] v60_rotc_rotates_through_carry
+  [PASS] v60_remu_rounds_up_to_multiple_like_vr_boot
+  [PASS] v60_rem_signed_and_sizes
+  [PASS] v60_rem_by_zero_leaves_destination_and_sets_ov
+  [PASS] v60_extbfl_left_justifies_field_like_vr
+  [PASS] v60_extbfs_extbfz_with_bit_displacement
+  [PASS] v60_extbfz_indexed_offset_crossing_32_bits_and_negative_offset
+  [PASS] v60_insbfr_insbfl_write_only_the_field
+  [PASS] v60_bit_field_invalid_forms_halt
+  [PASS] v60_setf_stores_comparison_result_like_vr
+  [PASS] v60_setf_all_sixteen_conditions
+  [PASS] v60_setf_condition_from_register_low_nibble
+  [PASS] v60_neg_absolute_value_like_vr
+  [PASS] v60_neg_flags_and_sizes
+  [PASS] v60_cvtsw_rounding_like_vr
+  [PASS] v60_cvtws_integer_to_float
+  [PASS] v60_float_arithmetic
+  [PASS] v60_float_compare_move_negate_abs_scale
+  [PASS] v60_movt_truncates_and_flags_overflow_like_vr
+  [PASS] v60_movt_word_to_byte_and_half
+  [PASS] v60_schcu_finds_halfword_like_vr
+  [PASS] v60_skpcu_skips_matching_bytes
+  [PASS] v60_movcd_overlapping_copy_moves_up_safely
+  [PASS] v60_movcfd_fills_upper_part
+  [PASS] v60_xch_swaps_registers_like_vr
+  [PASS] v60_xch_halfword_with_memory
+  [PASS] m68000_move_immediate_to_sr_sets_flags_and_mask
+  [PASS] m68000_move_to_sr_leaving_supervisor_switches_stack
+  [PASS] m68000_move_to_sr_unmasks_pending_interrupt
+  [PASS] m68000_clr_sizes_and_flags
+  [PASS] m68000_move_addressing_modes
+  [PASS] m68000_word_access_at_odd_address_halts
+  [PASS] m68000_dbra_loop_clears_memory
+  [PASS] m68000_bsr_rts_jsr_and_conditional_branches
+  [PASS] m68000_btst_immediate_on_data_register_sets_z_from_bit
+  [PASS] m68000_btst_dynamic_and_on_memory
+  [PASS] m68000_bset_bclr_bchg_modify_after_testing
+  [PASS] m68000_bit_operation_invalid_modes_halt
+  [PASS] m68000_addq_byte_wraps_and_sets_zero_carry_extend
+  [PASS] m68000_subq_and_addq_sizes
+  [PASS] m68000_addq_address_register_and_memory
+  [PASS] m68000_ror_long_immediate_like_vr_sound_program
+  [PASS] m68000_logical_shifts_move_bits_into_carry_and_extend
+  [PASS] m68000_arithmetic_shifts_keep_sign_and_report_overflow
+  [PASS] m68000_shift_count_in_register_and_rotate_through_extend
+  [PASS] m68000_bit_field_and_invalid_shift_modes_halt
+  [PASS] m68000_vr_routine_stores_24_bit_value_in_sound_control_latch
+  [PASS] m68000_swap_exchanges_halves_and_sets_flags
+  [PASS] m68000_andi_cmpi_vr_sound_dispatch
+  [PASS] m68000_immediate_logic_and_arithmetic
+  [PASS] m68000_logic_immediate_to_ccr_and_sr
+  [PASS] m68000_immediate_group_rejects_invalid_forms
+  [PASS] m68000_add_to_register_like_vr_sound_program
+  [PASS] m68000_sub_to_memory_and_address_arithmetic
+  [PASS] m68000_addx_chains_64_bit_add_and_keeps_zero
+  [PASS] m68000_subx_memory_predecrement
+  [PASS] m68000_cmpa_wraps_command_queue_like_vr_sound_handler
+  [PASS] m68000_cmp_sizes_and_flags
+  [PASS] m68000_cmpm_and_eor
+  [PASS] m68000_or_and_flags_like_vr
+  [PASS] m68000_multiply
+  [PASS] m68000_divide
+  [PASS] m68000_bcd_and_exchange
+  [PASS] m68000_tst_sets_n_and_z_like_vr
+  [PASS] tilemap_color_decoding
+  [PASS] tilemap_empty_video_memory_is_pen_zero
+  [PASS] tilemap_pixel_order_inside_a_tile
+  [PASS] tilemap_scroll_and_wraparound
+  [PASS] tilemap_per_line_scroll_and_layer_disable
+  [PASS] tilemap_transparency_and_priority_order
+  [PASS] tilemap_opaque_background_draws_pen_zero
+  [PASS] tilemap_window_mask_selects_tilemap_per_column
+  [PASS] tilemap_maximum_tile_index_and_palette_stay_in_bounds
+  [PASS] tilemap_worst_case_registers_render_safely
+  [PASS] tilemap_undersized_buffers_are_refused
+  [PASS] tilemap_demo_hud_text_renders
+  [PASS] polygon_rendering_requires_enable_mask
+  [PASS] polygon_fill_covers_exact_pixels
+  [PASS] polygon_painters_algorithm_far_to_near
+  [PASS] polygon_viewport_clipping
+  [PASS] polygon_stipple_and_wireframe
+  [PASS] polygon_color_luminance_and_table_advance
+  [PASS] polygon_list_selection_and_double_buffering
+  [PASS] polygon_malformed_lists_are_bounded
+  [PASS] polygon_demo_culls_back_faces
+  [PASS] polygon_demo_draws_cube_over_blue_backdrop
+  [PASS] polygon_demo_spins_between_frames
+  [PASS] polygon_command_05_uploads_polygon_ram_and_06_lighting
+  [PASS] polygon_uploads_reject_out_of_range_targets
+  [PASS] polygon_upload_with_garbage_length_ends_list_without_overflow
+  [PASS] polygon_erased_list_ends_quietly
+  [PASS] polygon_object_projects_and_fills
+  [PASS] polygon_object_backface_culling
+  [PASS] polygon_object_clipped_to_viewport
+  [PASS] polygon_object_diffuse_lighting
+  [PASS] uart_reset_state_and_mode_timing
+  [PASS] uart_byte_arrives_after_one_character_time
+  [PASS] uart_back_to_back_bytes_and_overrun
+  [PASS] uart_receiver_disabled_drops_bytes
+  [PASS] uart_internal_reset_returns_to_mode
+  [PASS] m68000_reset_reads_vectors
+  [PASS] m68000_instructions_and_cycle_counts
+  [PASS] m68000_stop_interrupt_and_rte
+  [PASS] m68000_interrupt_masked_until_mask_lowered
+  [PASS] m68000_unimplemented_opcode_halts
+  [PASS] m68000_erased_rom_halts_cleanly
+  [PASS] sound_command_from_v60_reaches_sound_cpu
+  [PASS] sound_reply_reaches_main_uart
+  [PASS] sound_cpu_runs_in_lockstep_with_main_cpu
+  [PASS] uart_software_reset_sequence_is_silent_and_ends_asynchronous
+  [PASS] sound_bus_logs_each_unmapped_address_once
+  [PASS] multipcm_slot_select_and_key
+  [PASS] multipcm_pitch_step
+  [PASS] multipcm_8bit_sample_level_pan_and_attenuation
+  [PASS] multipcm_12bit_sample_decoding
+  [PASS] multipcm_loop_point
+  [PASS] multipcm_bank_register_selects_second_megabyte
+  [PASS] multipcm_sound_bus_mapping
+  [PASS] multipcm_demo_tone_is_440_hz
+  [PASS] multipcm_audio_generated_in_lockstep
+  [PASS] ym3438_timer_a_overflows_after_its_period
+  [PASS] ym3438_timer_b_and_flag_enables
+  [PASS] ym3438_stopped_timer_reloads_when_restarted
+  [PASS] ym3438_vr_sound_program_waits_for_timer_a
+  [PASS] rom_crc32_reference_value
+  [PASS] rom_virtua_fighter_set_lands_in_the_right_places
+  [PASS] rom_virtua_racing_detected_and_case_insensitive
+  [PASS] rom_missing_critical_file_is_reported_and_nothing_is_loaded
+  [PASS] rom_wrong_size_is_reported
+  [PASS] rom_bad_folders_and_game_names
+  [PASS] rom_io_board_firmware_is_optional
+  [PASS] rom_io_board_firmware_found_in_model1io_device_folder
+  [PASS] rom_io_board_zip_only_gives_unzip_hint
+  [PASS] rom_eeprom_defaults_loaded_from_93c45
+  [PASS] io_shared_ram_vr_boot_accesses_read_back
+  [PASS] io_shared_ram_byte_lanes_and_window
+[Input] Coin inserted (Coin 1)! System port bitmask: 0xFFFF -> 0xFFFE
+  [FAIL] io_inputs_published_into_shared_ram
+         /Users/gv/dev/projects/sega-model1-emu/tests/test_io_board.cpp:96: CHECK_EQ(bus.read_word(0xC00000), 0x0000u) failed: got 0xFF, expected 0x0
+         --- emulator log ---
+         [Bus] Created (Model 1 memory map, 11 memory regions)
+         [Motherboard] Created
+         [68000] Reset, SSP=0xFFFFFFFF PC=0xFFFFFFFF
+         [V60] Reset, PC=0xFFFFFFF0
+         [Motherboard] Reset
+         [V60] CRITICAL: unimplemented opcode 0xFF at PC=0xFFFFFFF0, CPU halted
+         [68000] CRITICAL: address error: instruction fetch from an odd address (exception not emulated) at PC=0xFFFFFFFF, CPU halted
+         [V60] IRQ requested: vector 0x01 (pending, PSW.IE=0)
+         [Motherboard] Destroyed after 1 frames
+  [PASS] io_board_acknowledges_game_commands_once_per_frame
+  [PASS] io_inputs_virtua_racing_controls
+  [PASS] io_inputs_virtua_fighter_has_no_analog_controls
+  [PASS] eeprom_write_protect_write_busy_ready_and_read
+[Input] Coin inserted (Coin 1)! System port bitmask: 0xFFFF -> 0xFFFE
+  [PASS] io_board_io_controller_reaches_shared_ram_and_adc
+[Input] Coin inserted (Coin 1)! System port bitmask: 0xFFFF -> 0xFFFE
+  [PASS] io_board_firmware_copies_inputs_into_shared_ram
+  [PASS] z80_add_and_compare_flags
+  [PASS] z80_daa_after_add_and_sub
+  [PASS] z80_inc_dec_and_logic
+  [PASS] z80_16_bit_arithmetic
+  [PASS] z80_calls_stack_and_exchanges
+  [PASS] z80_djnz_and_conditional_jumps_timing
+  [PASS] z80_index_registers_and_displacements
+  [PASS] z80_cb_rotates_and_bits
+  [PASS] z80_block_instructions
+  [PASS] z80_interrupts_mode1_mode2_nmi_and_halt
+  [PASS] z80_io_and_neg_and_r_register
+  [PASS] tgp_dsp_fifo_round_trip_and_stall
+  [PASS] tgp_v60_read_waits_for_the_dsp
+  [PASS] tgp_dsp_multiply_accumulate_and_repeat
+  [PASS] tgp_copro_ram_auto_increment_both_sides
+  [PASS] tgp_copro_sincos_table_and_data_rom_window
+
+240 passed, 1 failed
+<end of output>
+Test time =  21.30 sec
+----------------------------------------------------------
+Test Failed.
+"emulator_tests" end time: Oct 01 20:49 CEST
+"emulator_tests" time elapsed: 00:00:21
+----------------------------------------------------------
+
+2/2 Testing: host_tests
+2/2 Test: host_tests
+Command: "/Users/gv/dev/projects/sega-model1-emu/build/host_tests"
+Directory: /Users/gv/dev/projects/sega-model1-emu/build
+"host_tests" start time: Oct 01 20:49 CEST
+Output:
+----------------------------------------------------------
+Running emulator tests
+
+  [PASS] audio_device_open_close_repeatedly
+  [PASS] audio_default_device_open_close_if_available
+  [PASS] audio_emulator_with_sound_starts_and_stops_cleanly
+  [PASS] audio_resampler_output_count
+
+4 passed, 0 failed
+<end of output>
+Test time =   4.37 sec
+----------------------------------------------------------
+Test Passed.
+"host_tests" end time: Oct 01 20:49 CEST
+"host_tests" time elapsed: 00:00:04
+----------------------------------------------------------
+
+End testing: Oct 01 20:49 CEST

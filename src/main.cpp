@@ -1,4 +1,6 @@
+#include "audio/audio_output.hpp"
 #include "core/motherboard.hpp"
+#include "core/rom_loader.hpp"
 #include "input/keyboard_input.hpp"
 #include "video/video_manager.hpp"
 
@@ -7,7 +9,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <filesystem>
 #include <string>
+#include <system_error>
 
 namespace {
 
@@ -53,9 +57,46 @@ bool poll_events(model1::KeyboardInput& keyboard)
 
 int main(int argc, char* argv[])
 {
-    // Optional first argument: path to a program ROM image. Until real ROM set
-    // handling exists, fall back to a placeholder path.
-    const std::string rom_path = (argc > 1) ? argv[1] : "roms/dummy_program.bin";
+    // Usage: model1 [--romdir <folder> [--game <id>]] [--tile-demo] [--poly-demo] [--sound-demo]
+    //               [--no-demo] [--no-audio] [<folder> | boot_rom.bin]
+    // --romdir (or a bare folder path) loads an unzipped MAME ROM set; a bare
+    // file is loaded raw into the boot ROM (for test programs). Without either, a placeholder path
+    // is tried and the built-in demo runs.
+    std::string rom_path = "roms/dummy_program.bin";
+    std::string rom_dir;
+    std::string game_id;
+    bool tile_demo = false;
+    bool poly_demo = false;
+    bool no_demo = false;
+    bool sound_demo = false;
+    bool no_audio = false;
+    uint64_t trace_count = 0;
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "--tile-demo") {
+            tile_demo = true;
+        } else if (arg == "--poly-demo") {
+            poly_demo = true;
+        } else if (arg == "--no-demo") {
+            no_demo = true;
+        } else if (arg == "--sound-demo") {
+            sound_demo = true;
+        } else if (arg == "--no-audio") {
+            no_audio = true;
+        } else if (arg == "--trace" && i + 1 < argc) {
+            trace_count = std::strtoull(argv[++i], nullptr, 10);
+        } else if ((arg == "--romdir" || arg == "--game") && i + 1 < argc) {
+            (arg == "--romdir" ? rom_dir : game_id) = argv[++i];
+        } else {
+            // A folder is a ROM set; a file is a raw boot ROM image.
+            std::error_code ec;
+            if (std::filesystem::is_directory(arg, ec)) {
+                rom_dir = arg;
+            } else {
+                rom_path = arg;
+            }
+        }
+    }
 
     SdlContext sdl(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS);
     if (!sdl.ok()) {
@@ -70,18 +111,58 @@ int main(int argc, char* argv[])
     model1::Motherboard motherboard;
     motherboard.reset();
 
+    // Declared after the SDL context, so it is destroyed (device closed)
+    // before SDL_Quit.
+    model1::AudioOutput audio;
+    if (!no_audio) {
+        audio.open(model1::SoundBoard::k_audio_rate_hz);
+    }
+
     model1::KeyboardInput keyboard(motherboard.inputs());
 
     // Verify the TGP command path and float math before running anything.
     motherboard.run_tgp_self_test();
 
-    // A missing ROM is not fatal yet. The image goes into the boot ROM
-    // region, which holds the V60 reset address (0xFFFFF0).
-    if (motherboard.bus().load_rom(rom_path, model1::Bus::k_boot_rom_base)) {
-        std::cout << "[Main] ROM loaded: " << rom_path << '\n';
+    bool rom_loaded = false;
+    if (!rom_dir.empty()) {
+        // A ROM set was asked for: anything missing is fatal.
+        if (!model1::load_game_directory(rom_dir, motherboard, game_id)) {
+            std::cerr << "[Main] Could not load the ROM set in '" << rom_dir << "', exiting\n";
+            return EXIT_FAILURE;
+        }
+        motherboard.reset(); // CPUs fetch their reset vectors from the new ROMs
+        rom_loaded = true;
     } else {
-        std::cout << "[Main] ROM load FAILED: " << rom_path << " (continuing without program)\n";
+        // A missing raw ROM is not fatal. The image goes into the boot ROM
+        // region, which holds the V60 reset address (0xFFFFF0).
+        rom_loaded = motherboard.bus().load_rom(rom_path, model1::Bus::k_boot_rom_base);
+        if (rom_loaded) {
+            std::cout << "[Main] ROM loaded: " << rom_path << '\n';
+        } else {
+            std::cout << "[Main] ROM load FAILED: " << rom_path << " (continuing without program)\n";
+        }
     }
+
+    // Without a program, video memory stays empty and the screen shows only
+    // palette entry 0 (black at power-on). Start the 3D demo instead, unless
+    // a demo was chosen explicitly or --no-demo asks for a blank machine.
+    if (!rom_loaded && !tile_demo && !poly_demo && !no_demo) {
+        std::cout << "[Main] No program running: starting the 3D demo (use --no-demo for a blank screen)\n";
+        poly_demo = true;
+    }
+    if (tile_demo) {
+        motherboard.load_tile_demo();
+    }
+    if (poly_demo) {
+        motherboard.load_polygon_demo();
+    }
+    if (sound_demo) {
+        motherboard.load_sound_demo();
+    }
+
+    // --trace N: log each CPU's next N instructions (boot code mapping).
+    motherboard.cpu().set_trace(trace_count);
+    motherboard.sound().cpu().set_trace(trace_count);
 
     // Fixed 60 Hz pacing driven by the high-resolution counter.
     const uint64_t counter_freq = SDL_GetPerformanceFrequency();
@@ -92,10 +173,23 @@ int main(int argc, char* argv[])
     while (running) {
         running = poll_events(keyboard);
 
-        // Emulate one frame (CPU cycles, then VBlank IRQ), then render during
-        // VBlank: VRAM -> pixel buffer -> window.
+        // Emulate one frame (CPU cycles, 2D layer composition, VBlank IRQ),
+        // then present it.
+        // The 3D demo plays the part of game code: it spins the cube by
+        // re-running its TGP geometry before each frame.
+        if (poly_demo) {
+            const auto frame = static_cast<float>(motherboard.frame_count());
+            motherboard.update_polygon_demo(0.6f + frame * 0.021f, 0.45f + frame * 0.013f);
+        }
+        if (sound_demo) {
+            motherboard.update_sound_demo(motherboard.frame_count());
+        }
         motherboard.run_frame();
-        video.update_framebuffer(motherboard.bus().vram());
+
+        // This frame's sound, produced in lockstep with the CPUs.
+        audio.submit(motherboard.sound().pending_audio());
+        motherboard.sound().clear_audio();
+        video.update_framebuffer(motherboard.frame());
         video.present_frame();
 
         // Coarse sleep, then spin for the last millisecond for accuracy.

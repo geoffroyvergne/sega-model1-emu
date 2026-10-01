@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names -fsanitize=address,undefined CMakeFiles/host_tests.dir/tests/test_main.cpp.o CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.o CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o -o host_tests  -Wl,-rpath,/opt/homebrew/lib libmodel1_core.a /opt/homebrew/lib/libSDL2-2.0.0.dylib

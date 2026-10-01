@@ -42,24 +42,33 @@ Bus::Bus()
 {
     // Erased EPROM contents until a ROM is loaded.
     m_program_rom.fill(0xFF);
+    m_data_rom.fill(0xFF);
     m_boot_rom.fill(0xFF);
 
     m_regions = {
-        {"program ROM",        k_program_rom_base,  k_program_rom_size,  m_program_rom.data(),  false},
+        {"program ROM",        k_program_rom_base,  k_data_window_base,  m_program_rom.data(),  false},
+        {"data ROM window",    k_data_window_base,  k_data_bank_size,    m_data_rom.data(),     false},
+        {"program ROM",        k_data_window_base + k_data_bank_size, k_program_rom_size - k_data_window_base - k_data_bank_size,
+                               m_program_rom.data() + k_data_window_base + k_data_bank_size, false},
         {"work RAM A",         k_ram_a_base,        k_ram_a_size,        m_ram_a.data(),        true},
         {"work RAM B",         k_ram_b_base,        k_ram_b_size,        m_ram_b.data(),        true},
         {"display list RAM",   k_display_list_base, k_display_list_size, m_display_list.data(), true},
-        {"debug framebuffer",  k_vram_base,         k_vram_size,         m_vram.data(),         true},
+        {"tile RAM",           k_tile_ram_base,     k_tile_ram_size,     m_tile_ram.data(),     true},
+        {"character RAM",      k_char_ram_base,     k_char_ram_size,     m_char_ram.data(),     true},
         {"palette RAM",        k_palette_base,      k_palette_size,      m_palette.data(),      true},
         {"colour translation", k_color_xlat_base,   k_color_xlat_size,   m_color_xlat.data(),   true},
         {"boot ROM",           k_boot_rom_base,     k_boot_rom_size,     m_boot_rom.data(),     false},
     };
 
+    m_data_window_region = 1;
     std::cerr << "[Bus] Created (Model 1 memory map, " << m_regions.size() << " memory regions)\n";
 }
 
 void Bus::reset()
 {
+    set_data_bank(0);
+    m_system_regs.fill(0);
+    m_system_regs_logged.reset();
     for (MemoryRegion& region : m_regions) {
         if (region.writable) {
             std::fill_n(region.data, region.size, uint8_t{0});
@@ -67,10 +76,88 @@ void Bus::reset()
     }
 }
 
-void Bus::map_io(std::string name, uint32_t base, uint32_t size, uint32_t offset_mask,
-                 IoRead read, IoWrite write)
+bool Bus::is_work_ram(uint32_t address, uint32_t size) const
 {
-    m_io.push_back({std::move(name), base, size, offset_mask, std::move(read), std::move(write)});
+    return in_range(address, size, k_ram_a_base, k_ram_a_size)
+        || in_range(address, size, k_ram_b_base, k_ram_b_size);
+}
+
+void Bus::map_io(std::string name, uint32_t base, uint32_t size, uint32_t offset_mask,
+                 IoRead read, IoWrite write, IoWriteByte write_byte)
+{
+    m_io.push_back({std::move(name), base, size, offset_mask, std::move(read), std::move(write),
+                    std::move(write_byte)});
+}
+
+void Bus::map_io_space(std::string name, uint32_t base, uint32_t size, uint32_t offset_mask,
+                       IoRead read, IoWrite write, IoWriteByte write_byte)
+{
+    m_io_space.push_back({std::move(name), base, size, offset_mask, std::move(read), std::move(write),
+                          std::move(write_byte)});
+}
+
+// ---------------------------------------------------------------------------
+// V60 I/O address space
+// ---------------------------------------------------------------------------
+
+uint32_t Bus::io_space_read(uint32_t address, uint32_t size)
+{
+    auto find = [this](uint32_t a) -> IoMapping* {
+        for (IoMapping& io : m_io_space) {
+            if (in_range(a, 1, io.base, io.size)) {
+                return &io;
+            }
+        }
+        return nullptr;
+    };
+    IoMapping* io = find(address);
+    if (io == nullptr || !io->read || (size > 1 && (address & 1) != 0)) {
+        std::cerr << "[Bus] CRITICAL: unmapped I/O-space read" << (size * 8) << " at " << Hex{address}
+                  << ", returning 0\n";
+        return 0;
+    }
+    if (size == 1) {
+        const uint16_t word = io->read(((address & ~1u) - io->base) & io->offset_mask);
+        return (address & 1) != 0 ? static_cast<uint32_t>(word >> 8) : static_cast<uint32_t>(word & 0xFF);
+    }
+    const uint32_t low = io->read((address - io->base) & io->offset_mask);
+    if (size == 2) {
+        return low;
+    }
+    IoMapping* high_io = find(address + 2);
+    const uint32_t high = (high_io != nullptr && high_io->read)
+        ? high_io->read((address + 2 - high_io->base) & high_io->offset_mask) : 0;
+    return low | (high << 16);
+}
+
+void Bus::io_space_write(uint32_t address, uint32_t size, uint32_t value)
+{
+    auto find = [this](uint32_t a) -> IoMapping* {
+        for (IoMapping& io : m_io_space) {
+            if (in_range(a, 1, io.base, io.size)) {
+                return &io;
+            }
+        }
+        return nullptr;
+    };
+    IoMapping* io = find(address);
+    const bool usable = io != nullptr
+        && (size == 1 ? static_cast<bool>(io->write_byte) : (static_cast<bool>(io->write) && (address & 1) == 0));
+    if (!usable) {
+        std::cerr << "[Bus] CRITICAL: unmapped I/O-space write" << (size * 8) << " at " << Hex{address}
+                  << " (value " << Hex{value} << "), ignored\n";
+        return;
+    }
+    if (size == 1) {
+        io->write_byte((address - io->base) & io->offset_mask, static_cast<uint8_t>(value));
+        return;
+    }
+    io->write((address - io->base) & io->offset_mask, static_cast<uint16_t>(value));
+    if (size == 4) {
+        if (IoMapping* high_io = find(address + 2); high_io != nullptr && high_io->write) {
+            high_io->write((address + 2 - high_io->base) & high_io->offset_mask, static_cast<uint16_t>(value >> 16));
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +182,27 @@ Bus::IoMapping* Bus::find_io(uint32_t address)
         }
     }
     return nullptr;
+}
+
+bool Bus::in_system_registers(uint32_t address, uint32_t size)
+{
+    return in_range(address, size, k_system_regs_base, k_system_regs_size);
+}
+
+// Each byte's first write is logged, so the boot sequence's register
+// programming is visible without flooding the log with per-frame writes.
+void Bus::log_system_register_write(uint32_t address, uint32_t size, uint32_t value)
+{
+    bool first = false;
+    for (uint32_t i = 0; i < size; ++i) {
+        const uint32_t offset = address - k_system_regs_base + i;
+        first = first || !m_system_regs_logged.test(offset);
+        m_system_regs_logged.set(offset);
+    }
+    if (first) {
+        std::cerr << "[Bus] System register write" << (size * 8) << " at " << Hex{address}
+                  << " = " << Hex{value} << " (latched, no device emulated yet)\n";
+    }
 }
 
 void Bus::log_unmapped_read(uint32_t address, uint32_t size)
@@ -139,6 +247,14 @@ uint32_t Bus::read_generic(uint32_t address, uint32_t size)
     }
 
     IoMapping* io = find_io(address);
+    if (io == nullptr && size == 4 && find_io(address + 2) != nullptr) {
+        // Latch low half, device high half: two 16-bit bus cycles.
+        const uint32_t low = read_generic(address, 2);
+        return low | (read_generic(address + 2, 2) << 16);
+    }
+    if (io == nullptr && in_system_registers(address, size)) {
+        return load_le(m_system_regs.data() + (address - k_system_regs_base), size);
+    }
     if (io == nullptr) {
         log_unmapped_read(address, size);
         return 0;
@@ -160,11 +276,7 @@ uint32_t Bus::read_generic(uint32_t address, uint32_t size)
     default: {
         // Two bus cycles, low half first.
         const uint32_t low = io_read_word(*io, address);
-        IoMapping* io_high = find_io(address + 2);
-        const uint32_t high = io_high != nullptr ? io_read_word(*io_high, address + 2) : 0;
-        if (io_high == nullptr) {
-            log_unmapped_read(address + 2, 2);
-        }
+        const uint32_t high = read_generic(address + 2, 2);
         return low | (high << 16);
     }
     }
@@ -183,13 +295,27 @@ void Bus::write_generic(uint32_t address, uint32_t size, uint32_t value)
     }
 
     IoMapping* io = find_io(address);
+    if (io == nullptr && size == 4 && find_io(address + 2) != nullptr) {
+        write_generic(address, 2, value & 0xFFFF);
+        write_generic(address + 2, 2, value >> 16);
+        return;
+    }
+    if (io == nullptr && in_system_registers(address, size)) {
+        log_system_register_write(address, size, value);
+        store_le(m_system_regs.data() + (address - k_system_regs_base), size, value);
+        return;
+    }
     if (io == nullptr) {
         log_unmapped_write(address, size, value);
         return;
     }
+    if (size == 1 && io->write_byte) {
+        io->write_byte((address - io->base) & io->offset_mask, static_cast<uint8_t>(value));
+        return;
+    }
     if (size == 1 || (address & 1) != 0) {
-        // No device needs byte or misaligned writes yet; partial-word
-        // semantics are device-specific, so refuse rather than guess.
+        // Byte writes need a device-specific handler (partial-word semantics
+        // differ between devices), so refuse rather than guess.
         std::cerr << "[Bus] WARNING: unsupported write" << (size * 8) << " to port '" << io->name
                   << "' at " << Hex{address} << " (value " << Hex{value} << "), ignored\n";
         return;
@@ -201,16 +327,20 @@ void Bus::write_generic(uint32_t address, uint32_t size, uint32_t value)
     }
     // Two bus cycles, low half first.
     io_write_word(*io, address, static_cast<uint16_t>(value));
-    if (IoMapping* io_high = find_io(address + 2)) {
-        io_write_word(*io_high, address + 2, static_cast<uint16_t>(value >> 16));
-    } else {
-        log_unmapped_write(address + 2, 2, value >> 16);
-    }
+    write_generic(address + 2, 2, value >> 16);
 }
 
 // ---------------------------------------------------------------------------
 // CPU-side accessors
 // ---------------------------------------------------------------------------
+
+uint8_t Bus::peek_byte(uint32_t address)
+{
+    if (MemoryRegion* region = find_region(address, 1)) {
+        return region->data[address - region->base];
+    }
+    return 0;
+}
 
 uint8_t Bus::read_byte(uint32_t address)
 {
@@ -245,6 +375,39 @@ void Bus::write_long(uint32_t address, uint32_t value)
 // ---------------------------------------------------------------------------
 // ROM loading
 // ---------------------------------------------------------------------------
+
+void Bus::set_data_bank(uint32_t bank)
+{
+    m_data_bank = bank % k_data_bank_count;
+    m_regions[m_data_window_region].data = m_data_rom.data() + m_data_bank * k_data_bank_size;
+}
+
+bool Bus::load_rom_data(std::span<const uint8_t> data, uint32_t target_address)
+{
+    MemoryRegion* region = find_region(target_address, 1);
+    if (region == nullptr || region->writable) {
+        std::cerr << "[Bus] load_rom_data: target " << Hex{target_address} << " is not inside a ROM region\n";
+        return false;
+    }
+    const uint32_t offset = target_address - region->base;
+    if (data.size() > region->size - offset) {
+        std::cerr << "[Bus] load_rom_data: " << data.size() << " bytes do not fit at " << Hex{target_address}
+                  << " (" << region->name << ")\n";
+        return false;
+    }
+    std::copy(data.begin(), data.end(), region->data + offset);
+    return true;
+}
+
+bool Bus::load_data_rom(std::span<const uint8_t> data, uint32_t offset)
+{
+    if (offset > k_data_rom_size || data.size() > k_data_rom_size - offset) {
+        std::cerr << "[Bus] load_data_rom: " << data.size() << " bytes do not fit at offset " << Hex{offset} << '\n';
+        return false;
+    }
+    std::copy(data.begin(), data.end(), m_data_rom.begin() + offset);
+    return true;
+}
 
 bool Bus::load_rom(const std::string& filepath, uint32_t target_address)
 {
