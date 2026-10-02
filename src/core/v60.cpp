@@ -115,6 +115,7 @@ uint32_t V60::execute_cycle()
         case k_op_dbcc:     op_dbcc(false);                              break;
         case k_op_dbcc_not: op_dbcc(true);                               break;
         case k_op_bit_field: op_bit_field();                             break;
+        case k_op_bit_string: op_bit_string();                           break;
         case k_op_float:    op_float(false);                             break;
         case k_op_float_convert: op_float(true);                         break;
         case k_op_setf:     op_setf();                                   break;
@@ -126,6 +127,19 @@ uint32_t V60::execute_cycle()
         case k_op_mov_b:    op_mov(OperandSize::Byte);                   break;
         case k_op_mov_h:    op_mov(OperandSize::Half);                   break;
         case k_op_mov_w:    op_mov(OperandSize::Word);                   break;
+        case k_op_movd:     op_move_double();                            break;
+        case k_op_decimal:  op_decimal();                                break;
+        case k_op_rvbit:    op_reverse(true);                            break;
+        case k_op_rvbyt:    op_reverse(false);                           break;
+        case k_op_dispose:  op_dispose();                                break;
+        case k_op_prepare_m0:
+        case k_op_prepare_m1: op_prepare(mode_m);                        break;
+        case k_op_tasi_m0:
+        case k_op_tasi_m1:  op_tasi(mode_m);                             break;
+        case k_op_retiu_m0:
+        case k_op_retiu_m1: op_retis(mode_m);                            break; // same as RETIS (MAME)
+        case k_op_getpsw_m0:
+        case k_op_getpsw_m1: op_getpsw(mode_m);                          break;
         case k_op_movs_bh:  op_move_extend(OperandSize::Byte, OperandSize::Half, true);  break;
         case k_op_movz_bh:  op_move_extend(OperandSize::Byte, OperandSize::Half, false); break;
         case k_op_movs_bw:  op_move_extend(OperandSize::Byte, OperandSize::Word, true);  break;
@@ -283,7 +297,8 @@ void V60::request_interrupt(uint8_t vector)
 
 bool V60::can_accept_interrupt() const
 {
-    if (!m_pending_irqs.any() || (m_psw & k_psw_ie) == 0) {
+    const bool line = m_irq_line && m_irq_acknowledge;
+    if ((!m_pending_irqs.any() && !line) || (m_psw & k_psw_ie) == 0) {
         return false;
     }
     // A HALT waits for interrupts; any other halt reason is a fatal stop.
@@ -292,12 +307,17 @@ bool V60::can_accept_interrupt() const
 
 void V60::accept_interrupt()
 {
-    // Acknowledge cycle: take the lowest pending vector number.
+    // Acknowledge cycle: the lowest latched vector number, or the one the
+    // interrupt controller supplies.
     uint32_t vector = 0;
-    while (!m_pending_irqs.test(vector)) {
-        ++vector;
+    if (m_pending_irqs.any()) {
+        while (!m_pending_irqs.test(vector)) {
+            ++vector;
+        }
+        m_pending_irqs.reset(vector);
+    } else {
+        vector = m_irq_acknowledge();
     }
-    m_pending_irqs.reset(vector);
 
     const bool woke_from_halt = (m_halt_reason == HaltReason::HaltInstruction);
     m_halt_reason = HaltReason::None;
@@ -955,6 +975,82 @@ void V60::op_bit_field()
     }
 }
 
+// Bit strings (0x5B, as MAME's op7a.hxx): operand 1 is a bit address, then
+// a length byte (bit 7 set = the length is in register bits 4-0), then
+// operand 2. Bits are numbered from bit 0 of the byte at the address
+// upward; bit offsets may run past the byte.
+//   0x00 / 0x02  SCH0BSU / SCH1BSU src, len, dst: dst (word) = index of the
+//                first 0 / 1 bit, or len if none (Z set then)
+//   0x08 / 0x09  MOVBSU / MOVBSD src, len, dst: copy len bits, upward from
+//                the first bit / downward from the last (overlap-safe)
+// R28 (and R27 for the moves) hold the current source (destination) byte
+// address as the string is processed. VF at 0xFFAFA5: SCH1BSU.
+void V60::op_bit_string()
+{
+    const uint8_t sub_opcode = fetch_byte();
+    const bool mode_m1 = (sub_opcode & 0x40) != 0;
+    const bool mode_m2 = (sub_opcode & 0x20) != 0;
+    const uint32_t operation = sub_opcode & 0x1Fu;
+    if (operation != 0x00 && operation != 0x02 && operation != 0x08 && operation != 0x09) {
+        halt(HaltReason::UnimplementedOpcode, m_opcode); // the sub-opcode follows on the next line
+        std::cerr << "[V60] (bit-string instruction 0x5B, sub-opcode " << Hex{operation, 2} << ")\n";
+        return;
+    }
+    const Operand source = decode_bit_operand(mode_m1);
+    if (source.kind != Operand::Kind::Memory) {
+        if (source.kind != Operand::Kind::Invalid) {
+            halt(HaltReason::UnimplementedOperand, m_opcode);
+        }
+        return;
+    }
+    const uint8_t spec = fetch_byte();
+    const uint32_t length = (spec & 0x80) != 0 ? m_reg[spec & 0x1F] : spec;
+    // Byte address and bit (0-7) of a bit offset from an operand's address.
+    auto locate = [](const Operand& operand, int64_t bit) {
+        const int64_t absolute = static_cast<int64_t>(operand.bit_offset) + bit;
+        return std::pair<uint32_t, uint32_t>{static_cast<uint32_t>(operand.address + static_cast<uint32_t>(absolute >> 3)),
+                                             static_cast<uint32_t>(absolute & 7)};
+    };
+
+    if (operation == 0x00 || operation == 0x02) {
+        const Operand destination = decode_operand(mode_m2, OperandSize::Word);
+        if (destination.kind == Operand::Kind::Invalid) {
+            return;
+        }
+        const uint32_t wanted = operation == 0x02 ? 1 : 0;
+        uint32_t index = 0;
+        for (; index < length; ++index) {
+            const auto [address, bit] = locate(source, index);
+            m_reg[28] = address;
+            if (((read_data(address, OperandSize::Byte) >> bit) & 1) == wanted) {
+                break;
+            }
+        }
+        set_flag(k_psw_z, index == length);
+        write_operand(destination, OperandSize::Word, index);
+        return;
+    }
+
+    const Operand destination = decode_bit_operand(mode_m2);
+    if (destination.kind != Operand::Kind::Memory) {
+        if (destination.kind != Operand::Kind::Invalid) {
+            halt(HaltReason::UnimplementedOperand, m_opcode);
+        }
+        return;
+    }
+    const bool downward = operation == 0x09;
+    for (uint32_t k = 0; k < length; ++k) {
+        const int64_t bit_index = downward ? static_cast<int64_t>(length) - 1 - k : k;
+        const auto [from, from_bit] = locate(source, bit_index);
+        const auto [to, to_bit] = locate(destination, bit_index);
+        m_reg[28] = from;
+        m_reg[27] = to;
+        const uint32_t value = (read_data(from, OperandSize::Byte) >> from_bit) & 1;
+        const uint32_t old = read_data(to, OperandSize::Byte);
+        write_data(to, OperandSize::Byte, (old & ~(1u << to_bit)) | (value << to_bit));
+    }
+}
+
 // SETF cond, dst: dst (byte) = 1 if condition `cond` (low 4 bits of the
 // first operand) holds, else 0. Codes as Bcc: 0 V, 1 NV, 2 L, 3 NL, 4 E,
 // 5 NE, 6 NH, 7 H, 8 N, 9 P, 10 always, 11 never, 12 LT, 13 GE, 14 LE,
@@ -1272,6 +1368,178 @@ void V60::op_mov(OperandSize size)
         return;
     }
     write_operand(operands.destination, size, read_operand(operands.source, size));
+}
+
+// MOVD src, dst: 64-bit move (as MAME's opMOVD). Each operand is a register
+// pair (Rn = low word, Rn+1 = high word) or 8 bytes of memory (low word
+// first). Flags are not affected. VF at 0xFE4B37: MOVD /0x40BFF6, R1.
+void V60::op_move_double()
+{
+    const OperandPair operands = decode_format12(OperandSize::Quad, OperandSize::Quad);
+    if (!require_valid(operands)) {
+        return;
+    }
+    for (const Operand* operand : {&operands.source, &operands.destination}) {
+        if (operand->kind == Operand::Kind::Register && operand->reg == 31) {
+            halt(HaltReason::InvalidRegisterPair, 0);
+            return;
+        }
+    }
+    if (operands.destination.kind == Operand::Kind::Immediate) {
+        halt(HaltReason::ImmediateDestination, 0);
+        return;
+    }
+    const Operand& src = operands.source;
+    const uint32_t low = src.kind == Operand::Kind::Register ? m_reg[src.reg] : read_data_long(src.address);
+    const uint32_t high = src.kind == Operand::Kind::Register ? m_reg[src.reg + 1u] : read_data_long(src.address + 4);
+    const Operand& dst = operands.destination;
+    if (dst.kind == Operand::Kind::Register) {
+        m_reg[dst.reg] = low;
+        m_reg[dst.reg + 1u] = high;
+    } else {
+        write_data_long(dst.address, low);
+        write_data_long(dst.address + 4, high);
+    }
+}
+
+// Decimal (BCD) group 0x59, as MAME's op7a.hxx: sub-opcode, source,
+// destination, then a pattern byte (bit 7 set = the value of register
+// bits 4-0).
+//   0x00 ADDDC src, dst: dst = dst + src + CY (2-digit packed BCD bytes)
+//   0x01 SUBDC src, dst: dst = dst - src - CY
+//   0x02 SUBRDC src, dst: dst = src - dst - CY
+//        CY = decimal carry / borrow; Z cleared if the result or the carry
+//        is non-zero, else unchanged (multi-byte arithmetic).
+//   0x10 CVTDPZ src (byte), dst (half): packed to unpacked (zoned): the
+//        two digits in the low nibbles of two bytes, each ORed with the
+//        pattern; Z cleared if src is non-zero.
+//   0x18 CVTDZP src (half), dst (byte): unpacked to packed.
+void V60::op_decimal()
+{
+    const uint8_t sub_opcode = fetch_byte();
+    const bool mode_m1 = (sub_opcode & 0x40) != 0;
+    const bool mode_m2 = (sub_opcode & 0x20) != 0;
+    const uint32_t operation = sub_opcode & 0x1Fu;
+    if (operation != 0x00 && operation != 0x01 && operation != 0x02 && operation != 0x10 && operation != 0x18) {
+        halt(HaltReason::UnimplementedOpcode, m_opcode); // the sub-opcode follows on the next line
+        std::cerr << "[V60] (decimal instruction 0x59, sub-opcode " << Hex{operation, 2} << ")\n";
+        return;
+    }
+    const OperandSize source_size = operation == 0x18 ? OperandSize::Half : OperandSize::Byte;
+    const OperandSize destination_size = operation == 0x10 ? OperandSize::Half : OperandSize::Byte;
+    const Operand source = decode_operand(mode_m1, source_size);
+    if (source.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const Operand destination = decode_operand(mode_m2, destination_size);
+    if (destination.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const uint8_t spec = fetch_byte();
+    const uint32_t pattern = (spec & 0x80) != 0 ? m_reg[spec & 0x1Fu] : spec;
+    const uint32_t src = read_operand(source, source_size);
+
+    if (operation == 0x10) { // CVTDPZ
+        const uint32_t zoned = (((src >> 4) & 0xF) | ((src & 0xF) << 8) | pattern | (pattern << 8)) & 0xFFFF;
+        if ((src & 0xFF) != 0) {
+            set_flag(k_psw_z, false);
+        }
+        write_operand(destination, OperandSize::Half, zoned);
+        return;
+    }
+    if (operation == 0x18) { // CVTDZP
+        const uint32_t packed = ((src >> 8) & 0xF) | ((src & 0xF) << 4);
+        if (packed != 0) {
+            set_flag(k_psw_z, false);
+        }
+        write_operand(destination, OperandSize::Byte, packed);
+        return;
+    }
+    const uint32_t dst = read_operand(destination, OperandSize::Byte);
+    const int a = static_cast<int>((src >> 4) & 0xF) * 10 + static_cast<int>(src & 0xF);
+    const int b = static_cast<int>((dst >> 4) & 0xF) * 10 + static_cast<int>(dst & 0xF);
+    const int carry = flag(k_psw_cy) ? 1 : 0;
+    int result = operation == 0x00 ? b + a + carry : (operation == 0x01 ? b - a - carry : a - b - carry);
+    bool carry_out = false;
+    if (operation == 0x00 && result >= 100) {
+        result -= 100;
+        carry_out = true;
+    } else if (operation != 0x00 && result < 0) {
+        result += 100;
+        carry_out = true;
+    }
+    set_flag(k_psw_cy, carry_out);
+    if (result != 0 || carry_out) {
+        set_flag(k_psw_z, false);
+    }
+    write_operand(destination, OperandSize::Byte, static_cast<uint32_t>(((result / 10) << 4) | (result % 10)));
+}
+
+// RVBIT src, dst (bytes): dst = src with its 8 bits in reverse order.
+// RVBYT src, dst (words): dst = src with its 4 bytes in reverse order.
+// Flags are not affected (as MAME).
+void V60::op_reverse(bool bits)
+{
+    const OperandSize size = bits ? OperandSize::Byte : OperandSize::Word;
+    const OperandPair operands = decode_format12(size, size);
+    if (!require_valid(operands)) {
+        return;
+    }
+    uint32_t value = read_operand(operands.source, size);
+    if (bits) {
+        uint32_t reversed = 0;
+        for (int i = 0; i < 8; ++i) {
+            reversed |= ((value >> i) & 1u) << (7 - i);
+        }
+        value = reversed;
+    } else {
+        value = (value >> 24) | ((value >> 8) & 0xFF00u) | ((value << 8) & 0xFF0000u) | (value << 24);
+    }
+    write_operand(operands.destination, size, value);
+}
+
+// PREPARE size: push FP, FP = SP, SP -= size (a word operand): a new stack
+// frame of `size` bytes of locals. DISPOSE: SP = FP, pop FP. Flags are not
+// affected.
+void V60::op_prepare(bool mode_m)
+{
+    const Operand operand = decode_operand(mode_m, OperandSize::Word);
+    if (operand.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const uint32_t size = read_operand(operand, OperandSize::Word);
+    push_long(m_reg[k_reg_fp]);
+    m_reg[k_reg_fp] = m_reg[k_reg_sp];
+    m_reg[k_reg_sp] -= size;
+}
+
+void V60::op_dispose()
+{
+    m_reg[k_reg_sp] = m_reg[k_reg_fp];
+    m_reg[k_reg_fp] = pop_long();
+}
+
+// TASI dst (byte): test and set. Flags as SUB dst, #0xFF (Z set if dst was
+// 0xFF), then dst = 0xFF.
+void V60::op_tasi(bool mode_m)
+{
+    const Operand operand = decode_operand(mode_m, OperandSize::Byte);
+    if (operand.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const uint32_t value = read_operand(operand, OperandSize::Byte);
+    add_sub_flags(value, 0xFF, false, true, OperandSize::Byte);
+    write_operand(operand, OperandSize::Byte, 0xFF);
+}
+
+// GETPSW dst: dst (word) = PSW.
+void V60::op_getpsw(bool mode_m)
+{
+    const Operand operand = decode_operand(mode_m, OperandSize::Word);
+    if (operand.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    write_operand(operand, OperandSize::Word, m_psw);
 }
 
 // MOVS / MOVZ src, dst: move a byte or halfword into a larger destination,
@@ -1855,6 +2123,11 @@ void V60::op_string(OperandSize size)
     case 0x0B: op_move_string_down(size, true);         return; // MOVCFD
     case 0x18: op_search_string_up(size, true);         return; // SCHCU
     case 0x1A: op_search_string_up(size, false);        return; // SKPCU
+    case 0x00: op_compare_string(size, false, false);   return; // CMPC
+    case 0x01: op_compare_string(size, true, false);    return; // CMPCF
+    case 0x02: op_compare_string(size, false, true);    return; // CMPCS
+    case 0x19: op_search_string_down(size, true);       return; // SCHCD
+    case 0x1B: op_search_string_down(size, false);      return; // SKPCD
     default:
         halt(HaltReason::UnimplementedOpcode, m_opcode); // the sub-opcode follows on the next line
         std::cerr << "[V60] (string instruction " << Hex{m_opcode, 2} << ", sub-opcode "
@@ -1967,6 +2240,107 @@ void V60::op_move_string_down(OperandSize size, bool fill)
 // index. Z is set when nothing was found and cleared when found - the
 // opposite of NEC's manual, but what the hardware does according to MAME.
 // VR at 0xFEDD9B: SCHCU.H [R1], R9, R0.
+// CMPC / CMPCF / CMPCS src, len1, dst, len2 (as MAME's opCMPSTRB/H):
+// compare two strings element by element. CMPCF first pads the shorter one
+// to the other's length with R26; CMPCS stops at an element equal to R26
+// (CY cleared then, else set). S = the first string is greater, Z = equal
+// (lengths included). R28 / R27 = each length + the index reached.
+void V60::op_compare_string(OperandSize size, bool fill, bool stop_at_r26)
+{
+    const uint8_t sub_opcode = m_bus.peek_byte((m_pc - 1) & k_address_mask);
+    auto read_length = [this]() {
+        const uint8_t spec = fetch_byte();
+        return (spec & 0x80) != 0 ? m_reg[spec & 0x1Fu] : static_cast<uint32_t>(spec & 0x7F);
+    };
+    const Operand first = decode_operand((sub_opcode & 0x40) != 0, size);
+    if (first.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const uint32_t length1 = read_length();
+    const Operand second = decode_operand((sub_opcode & 0x20) != 0, size);
+    if (second.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const uint32_t length2 = read_length();
+    const std::optional<uint32_t> a = operand_address(first);
+    const std::optional<uint32_t> b = a ? operand_address(second) : std::nullopt;
+    if (!a || !b) {
+        return;
+    }
+    const uint32_t step = bytes_of(size);
+    const uint32_t mask = size_mask(step);
+    const uint32_t stop = m_reg[26] & mask;
+    if (fill) {
+        for (uint32_t i = length1; i < length2; ++i) {
+            write_data(*a + i * step, size, stop);
+        }
+        for (uint32_t i = length2; i < length1; ++i) {
+            write_data(*b + i * step, size, stop);
+        }
+    }
+    const uint32_t count = std::min(length1, length2);
+    set_flag(k_psw_z, false);
+    set_flag(k_psw_s, false);
+    if (stop_at_r26) {
+        set_flag(k_psw_cy, true);
+    }
+    uint32_t i = 0;
+    for (; i < count; ++i) {
+        const uint32_t c1 = read_data(*a + i * step, size);
+        const uint32_t c2 = read_data(*b + i * step, size);
+        if (c1 != c2) {
+            set_flag(k_psw_s, c1 > c2);
+            break;
+        }
+        if (stop_at_r26 && (c1 == stop || c2 == stop)) {
+            set_flag(k_psw_cy, false);
+            break;
+        }
+    }
+    m_reg[28] = length1 + i;
+    m_reg[27] = length2 + i;
+    if (i == count) {
+        set_flag(k_psw_s, length1 > length2);
+        set_flag(k_psw_z, length1 == length2);
+    }
+}
+
+// SCHCD / SKPCD str, len, char (as MAME's opSEARCHDB/H): search downward
+// for the first element equal (SCHCD) or not equal (SKPCD) to char. MAME
+// starts at index len and goes down to 0, and sets Z when the search stops
+// at the starting index (its source notes this is the opposite of NEC's
+// manual); followed here. R28 = the element address, R27 = its index.
+void V60::op_search_string_down(OperandSize size, bool search_equal)
+{
+    const uint8_t sub_opcode = m_bus.peek_byte((m_pc - 1) & k_address_mask);
+    const Operand string = decode_operand((sub_opcode & 0x40) != 0, size);
+    if (string.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const uint8_t spec = fetch_byte();
+    const uint32_t length = (spec & 0x80) != 0 ? m_reg[spec & 0x1Fu] : static_cast<uint32_t>(spec & 0x7F);
+    const Operand character = decode_operand((sub_opcode & 0x20) != 0, size);
+    if (character.kind == Operand::Kind::Invalid) {
+        return;
+    }
+    const std::optional<uint32_t> base = operand_address(string);
+    if (!base) {
+        return;
+    }
+    const uint32_t value = read_operand(character, size);
+    const uint32_t step = bytes_of(size);
+    auto i = static_cast<int64_t>(length);
+    for (; i >= 0; --i) {
+        const bool equal = read_data(*base + static_cast<uint32_t>(i) * step, size) == value;
+        if (equal == search_equal) {
+            break;
+        }
+    }
+    m_reg[28] = *base + static_cast<uint32_t>(i) * step;
+    m_reg[27] = static_cast<uint32_t>(i);
+    set_flag(k_psw_z, static_cast<uint32_t>(i) == length);
+}
+
 void V60::op_search_string_up(OperandSize size, bool search_equal)
 {
     const uint8_t sub_opcode = m_bus.peek_byte((m_pc - 1) & k_address_mask);

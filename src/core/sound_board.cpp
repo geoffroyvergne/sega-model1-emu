@@ -81,6 +81,9 @@ void SoundBoard::generate_audio(std::size_t frames)
         const std::size_t chunk = std::min(frames - done, k_audio_buffer_frames);
         m_pcm1->generate(m_scratch1, chunk);
         m_pcm2->generate(m_scratch2, chunk);
+        if (m_music) {
+            m_music(std::span<int16_t>(m_scratch_music.data(), chunk * 2));
+        }
         // Mix with MAME's routing gains. The FM stream advances for every
         // frame; only frames that fit in the buffer are stored.
         const std::size_t stored = done < kept ? std::min(chunk, kept - done) : 0;
@@ -92,9 +95,12 @@ void SoundBoard::generate_audio(std::size_t frames)
             }
             for (std::size_t channel = 0; channel < 2; ++channel) {
                 const std::size_t in = frame * 2 + channel;
-                const int32_t mixed = ((static_cast<int32_t>(m_scratch1[in]) + m_scratch2[in]) * k_pcm_gain_tenths
-                                       + fm[channel] * k_fm_gain_tenths)
-                                      / 10;
+                int32_t mixed = ((static_cast<int32_t>(m_scratch1[in]) + m_scratch2[in]) * k_pcm_gain_tenths
+                                 + fm[channel] * k_fm_gain_tenths)
+                                / 10;
+                if (m_music) {
+                    mixed += m_scratch_music[in];
+                }
                 m_audio[(m_audio_frames + done + frame) * 2 + channel] =
                     static_cast<int16_t>(std::clamp(mixed, -32768, 32767));
             }

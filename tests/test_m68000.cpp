@@ -916,3 +916,64 @@ TEST_CASE(m68000_tst_sets_n_and_z_like_vr)
     rig.step();
     CHECK_EQ(flags(rig), k_x);
 }
+
+// ---------------------------------------------------------------------------
+// MOVEM, NEG / NEGX / NOT, EXT (Virtua Fighter's sound program)
+// ---------------------------------------------------------------------------
+
+TEST_CASE(m68000_movem_saves_and_restores_registers)
+{
+    // VF sound program at 0x4D0: MOVEM.L D0-D4, -(A7). Here:
+    //   MOVEM.L D0-D1/A0, -(A7)   (predecrement order: bit 15 = D0 ... bit 0 = A7)
+    //   MOVEM.L (A7)+, D2-D3/A1
+    //   MOVEM.W (A2), D4          (word: sign-extended into the register)
+    Rig rig({0x48E7, 0xC080, 0x4CDF, 0x020C, 0x4C92, 0x0010});
+    rig.cpu().set_d(0, 0x11111111);
+    rig.cpu().set_d(1, 0x22222222);
+    rig.cpu().set_a(0, 0x33333333);
+    rig.cpu().set_a(2, k_ram + 0x100);
+    rig.board->bus().write_word(k_ram + 0x100, 0x8000);
+    const uint32_t sp = rig.cpu().a(7);
+    CHECK_EQ(rig.step(), 8u + 3 * 8);
+    CHECK_EQ(rig.cpu().a(7), sp - 12);
+    CHECK_EQ(rig.ram16(sp - 12), 0x1111u); // D0 at the lowest address
+    CHECK_EQ(rig.ram16(sp - 4), 0x3333u);  // A0 last
+    CHECK_EQ(rig.step(), 12u + 3 * 8);
+    CHECK_EQ(rig.cpu().a(7), sp);
+    CHECK_EQ(rig.cpu().d(2), 0x11111111u);
+    CHECK_EQ(rig.cpu().d(3), 0x22222222u);
+    CHECK_EQ(rig.cpu().a(1), 0x33333333u);
+    CHECK_EQ(rig.step(), 12u + 4);
+    CHECK_EQ(rig.cpu().d(4), 0xFFFF8000u);
+}
+
+TEST_CASE(m68000_neg_negx_not_ext)
+{
+    // VF sound program at 0xB06: NOT.B D6; at 0xA9A: EXT.W D3.
+    Rig rig({0x4400, 0x4641, 0x4082, 0x4883, 0x48C4, 0x4400});
+    rig.cpu().set_sr(0x2000);
+    rig.cpu().set_d(0, 0x12345601);
+    rig.cpu().set_d(1, 0x000000FF);
+    rig.cpu().set_d(2, 0);
+    rig.cpu().set_d(3, 0x00123480);
+    rig.cpu().set_d(4, 0x00008000);
+    CHECK_EQ(rig.step(), 4u); // NEG.B D0: 0 - 1
+    CHECK_EQ(rig.cpu().d(0), 0x123456FFu);
+    CHECK_EQ(flags(rig), k_n | k_c | k_x);
+    rig.step(); // NOT.W D1: X kept, V C cleared
+    CHECK_EQ(rig.cpu().d(1), 0x0000FF00u);
+    CHECK_EQ(flags(rig), k_n | k_x);
+    rig.cpu().set_sr(static_cast<uint16_t>(0x2000 | k_x | k_z));
+    CHECK_EQ(rig.step(), 6u); // NEGX.L D2 with X = 1: 0 - 0 - 1, Z cleared
+    CHECK_EQ(rig.cpu().d(2), 0xFFFFFFFFu);
+    CHECK_EQ(flags(rig), k_n | k_c | k_x);
+    rig.step(); // EXT.W D3
+    CHECK_EQ(rig.cpu().d(3), 0x0012FF80u);
+    CHECK_EQ(flags(rig) & (k_n | k_z | k_v | k_c), k_n);
+    rig.step(); // EXT.L D4
+    CHECK_EQ(rig.cpu().d(4), 0xFFFF8000u);
+    rig.cpu().set_d(0, 0);
+    rig.cpu().set_sr(0x2000);
+    rig.step(); // NEG.B of 0: Z set, C X clear
+    CHECK_EQ(flags(rig), k_z);
+}

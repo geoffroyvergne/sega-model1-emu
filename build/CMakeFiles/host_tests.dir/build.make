@@ -100,10 +100,24 @@ CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/tests/test_audio_host.cpp -o CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.s
 
+CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o: CMakeFiles/host_tests.dir/flags.make
+CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o: /Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp
+CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o: CMakeFiles/host_tests.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o -MF CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o.d -o CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp
+
+CMakeFiles/host_tests.dir/tests/test_input_host.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/host_tests.dir/tests/test_input_host.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp > CMakeFiles/host_tests.dir/tests/test_input_host.cpp.i
+
+CMakeFiles/host_tests.dir/tests/test_input_host.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/host_tests.dir/tests/test_input_host.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp -o CMakeFiles/host_tests.dir/tests/test_input_host.cpp.s
+
 CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o: CMakeFiles/host_tests.dir/flags.make
 CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp
 CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o: CMakeFiles/host_tests.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o -MF CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o.d -o CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp
 
 CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.i: cmake_force
@@ -114,23 +128,57 @@ CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp -o CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.s
 
+CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o: CMakeFiles/host_tests.dir/flags.make
+CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp
+CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o: CMakeFiles/host_tests.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o -MF CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o.d -o CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp
+
+CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp > CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.i
+
+CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp -o CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.s
+
+CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o: CMakeFiles/host_tests.dir/flags.make
+CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp
+CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o: CMakeFiles/host_tests.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o -MF CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o.d -o CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp
+
+CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp > CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.i
+
+CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp -o CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.s
+
 # Object files for target host_tests
 host_tests_OBJECTS = \
 "CMakeFiles/host_tests.dir/tests/test_main.cpp.o" \
 "CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.o" \
-"CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o"
+"CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o" \
+"CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o" \
+"CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o" \
+"CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o"
 
 # External object files for target host_tests
 host_tests_EXTERNAL_OBJECTS =
 
 host_tests: CMakeFiles/host_tests.dir/tests/test_main.cpp.o
 host_tests: CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.o
+host_tests: CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o
 host_tests: CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o
+host_tests: CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o
+host_tests: CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o
 host_tests: CMakeFiles/host_tests.dir/build.make
 host_tests: libmodel1_core.a
 host_tests: /opt/homebrew/lib/libSDL2-2.0.0.dylib
 host_tests: CMakeFiles/host_tests.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable host_tests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable host_tests"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/host_tests.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

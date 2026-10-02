@@ -2,6 +2,7 @@
 
 #include <array>
 #include <bitset>
+#include <unordered_set>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -206,6 +207,10 @@ private:
     std::array<uint8_t, k_boot_rom_size>     m_boot_rom{};
     std::array<uint8_t, k_system_regs_size>  m_system_regs{};
     std::bitset<k_system_regs_size>          m_system_regs_logged; // first write per byte is logged
+    std::unordered_set<uint32_t> m_logged_unmapped_reads;  // unmapped addresses already logged
+    std::unordered_set<uint32_t> m_logged_unmapped_writes;
+    std::unordered_set<uint32_t> m_logged_io_space_reads;   // the same for the I/O space
+    std::unordered_set<uint32_t> m_logged_io_space_writes;
 
     std::vector<MemoryRegion> m_regions;
     std::vector<IoMapping>    m_io;

@@ -62,12 +62,13 @@ public:
     TgpCopro(const TgpCopro&) = delete;
     TgpCopro& operator=(const TgpCopro&) = delete;
 
-    // ROM loading (little-endian 32-bit words). The board is active only
-    // when all three are loaded.
+    // ROM loading (little-endian 32-bit words). The board is active once the
+    // program and tables are loaded; the data ROM is optional (Virtua
+    // Fighter has none: its window then reads 0).
     bool load_program(std::span<const uint8_t> bytes);
     bool load_tables(std::span<const uint8_t> bytes);
     bool load_data_rom(std::span<const uint8_t> bytes);
-    [[nodiscard]] bool is_active() const { return m_has_program && m_has_tables && m_has_data; }
+    [[nodiscard]] bool is_active() const { return m_has_program && m_has_tables; }
 
     void reset();
 

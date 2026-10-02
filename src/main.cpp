@@ -1,7 +1,9 @@
 #include "audio/audio_output.hpp"
 #include "core/motherboard.hpp"
 #include "core/rom_loader.hpp"
+#include "input/gamepad_input.hpp"
 #include "input/keyboard_input.hpp"
+#include "input/shared_presses.hpp"
 #include "video/video_manager.hpp"
 
 #include <SDL.h>
@@ -41,7 +43,7 @@ private:
 
 // Drains all pending events without blocking. Returns false when the
 // application should exit.
-bool poll_events(model1::KeyboardInput& keyboard)
+bool poll_events(model1::KeyboardInput& keyboard, model1::GamepadInput& gamepads)
 {
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
@@ -49,6 +51,7 @@ bool poll_events(model1::KeyboardInput& keyboard)
             return false;
         }
         keyboard.process_sdl_event(event);
+        gamepads.process_sdl_event(event);
     }
     return true;
 }
@@ -98,7 +101,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    SdlContext sdl(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS);
+    SdlContext sdl(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
     if (!sdl.ok()) {
         return EXIT_FAILURE;
     }
@@ -118,7 +121,19 @@ int main(int argc, char* argv[])
         audio.open(model1::SoundBoard::k_audio_rate_hz);
     }
 
-    model1::KeyboardInput keyboard(motherboard.inputs());
+    // Keyboard and game controllers press the same inputs. Controllers
+    // already plugged in arrive as "device added" events on the first poll.
+    model1::SharedPresses presses(motherboard.inputs());
+    model1::KeyboardInput keyboard(presses);
+    model1::GamepadInput gamepads(presses);
+    // Extra controller mappings (SDL's gamecontrollerdb.txt format): from
+    // the working directory, then next to the executable.
+    if (model1::GamepadInput::load_mappings("gamecontrollerdb.txt") == 0) {
+        if (char* base = SDL_GetBasePath(); base != nullptr) {
+            model1::GamepadInput::load_mappings(std::string(base) + "gamecontrollerdb.txt");
+            SDL_free(base);
+        }
+    }
 
     // Verify the TGP command path and float math before running anything.
     motherboard.run_tgp_self_test();
@@ -179,7 +194,7 @@ int main(int argc, char* argv[])
 
     bool running = true;
     while (running) {
-        running = poll_events(keyboard);
+        running = poll_events(keyboard, gamepads);
 
         // Emulate one frame (CPU cycles, 2D layer composition, VBlank IRQ),
         // then present it.

@@ -3,6 +3,8 @@
 
 #include "test_framework.hpp"
 
+#include <algorithm>
+
 #include "core/motherboard.hpp"
 #include "core/polygon_renderer.hpp"
 
@@ -429,6 +431,7 @@ struct ObjectScene {
     uint32_t extra_flags = 0;          // e.g. 0x4000 double-sided
     int viewport_x1 = 0;
     bool from_rom = false;
+    uint32_t command = 0x01;           // 0x41: above the HUD
 };
 
 // A 2x2 square at z = 10 (object space x, y = +/-1), zoom 100: it covers
@@ -469,7 +472,7 @@ void build_object_scene(PolyRig& rig, const ObjectScene& scene)
     const float matrix[12] = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10}; // translate to z = 10
     for (int i = 0; i < 12; ++i) rig.pf(rig.w + 2 + 2 * static_cast<std::size_t>(i), matrix[i]);
     rig.w += 26;
-    rig.p32(rig.w, 0x01);
+    rig.p32(rig.w, scene.command);
     rig.p32(rig.w + 2, 0x40000);
     rig.p32(rig.w + 4, scene.from_rom ? 0x100 : PolygonRenderer::k_poly_ram_base);
     rig.p32(rig.w + 6, 0);
@@ -498,6 +501,53 @@ TEST_CASE(polygon_object_projects_and_fills)
     scene.from_rom = true; // same object read from polygon ROM
     build_object_scene(rom, scene);
     CHECK_EQ(pixel(rom, 248, 192), k_red);
+}
+
+TEST_CASE(polygon_above_hud_pass_draws_0x41_through_dark_hud_pixels)
+{
+    using Pass = PolygonRenderer::Pass;
+    auto above = [](PolyRig& rig) {
+        rig.renderer->render(rig.lists, rig.palette, rig.xlat, rig.frame, Pass::AboveHud);
+    };
+    constexpr uint32_t k_black = 0xFF000000, k_dark = 0xFF080808, k_grid = 0xFF00FF00;
+
+    // A 0x41 object: skipped below the HUD...
+    PolyRig rig;
+    ObjectScene scene;
+    scene.command = 0x41;
+    build_object_scene(rig, scene);
+    CHECK_EQ(rig.renderer->objects_drawn(), 0u);
+    CHECK_EQ(pixel(rig, 248, 192), k_backdrop);
+    // ...drawn above it, but only where the HUD is near-black (<= 8).
+    std::fill(rig.frame.begin(), rig.frame.end(), k_black);
+    rig.frame[192 * 496 + 250] = k_dark;
+    rig.frame[192 * 496 + 244] = k_grid;
+    above(rig);
+    CHECK_EQ(rig.renderer->objects_drawn(), 1u);
+    CHECK_EQ(pixel(rig, 248, 192), k_red);
+    CHECK_EQ(pixel(rig, 250, 192), k_red);   // dark HUD pixel: the blip shows
+    CHECK_EQ(pixel(rig, 244, 192), k_grid);  // bright HUD pixel stays on top
+    CHECK_EQ(pixel(rig, 230, 192), k_black); // outside the object: untouched
+
+    // A 0x01 object is drawn below the HUD only.
+    PolyRig below;
+    build_object_scene(below, ObjectScene{});
+    CHECK_EQ(pixel(below, 248, 192), k_red);
+    std::fill(below.frame.begin(), below.frame.end(), k_black);
+    above(below);
+    CHECK_EQ(pixel(below, 248, 192), k_black);
+    CHECK_EQ(below.renderer->objects_drawn(), 1u); // counts both passes of the frame
+
+    // Direct polygons too.
+    PolyRig direct;
+    direct.full_screen();
+    direct.quad(-10, 10, 10, 10, 10, -10, -10, -10, 0, 5);
+    direct.end();
+    std::fill(direct.frame.begin(), direct.frame.end(), k_black);
+    above(direct);
+    CHECK_EQ(direct.px(248, 192), k_black);
+    direct.render();
+    CHECK_EQ(direct.px(248, 192), k_red);
 }
 
 TEST_CASE(polygon_object_backface_culling)

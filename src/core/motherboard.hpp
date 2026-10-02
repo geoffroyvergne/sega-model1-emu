@@ -1,8 +1,10 @@
 #pragma once
 
 #include "core/bus.hpp"
+#include "core/digital_sound_board.hpp"
 #include "core/dual_port_ram.hpp"
 #include "core/input_manager.hpp"
+#include "core/interrupt_controller.hpp"
 #include "core/io_board.hpp"
 #include "core/i8251.hpp"
 #include "core/polygon_renderer.hpp"
@@ -141,8 +143,12 @@ public:
     [[nodiscard]] InputManager& inputs() { return *m_inputs; }
     [[nodiscard]] DualPortRam& io_shared_ram() { return *m_io_shared_ram; }
     [[nodiscard]] IoBoard& io_board() { return *m_io_board; }
+    // Star Wars Arcade's music board; runs only when its program is loaded.
+    [[nodiscard]] DigitalSoundBoard& dsb() { return *m_dsb; }
     [[nodiscard]] PolygonRenderer& polygons() { return *m_polygons; }
     [[nodiscard]] I8251& sound_uart() { return *m_sound_uart; }
+    [[nodiscard]] InterruptController& interrupts() { return m_interrupts; }
+    [[nodiscard]] GlueTimers& timers() { return m_timers; }
     [[nodiscard]] SoundBoard& sound() { return *m_sound; }
 
     // Total cycles run since reset.
@@ -158,6 +164,7 @@ private:
     std::unique_ptr<DualPortRam> m_io_shared_ram; // MB8421 shared with the I/O board
     std::unique_ptr<InputManager> m_inputs;
     std::unique_ptr<IoBoard> m_io_board; // runs only when its firmware is loaded
+    std::unique_ptr<DigitalSoundBoard> m_dsb; // runs only when its program is loaded
     std::unique_ptr<TilemapRenderer> m_tilemaps;
     std::unique_ptr<PolygonRenderer> m_polygons;
     std::unique_ptr<I8251> m_sound_uart; // main board side of the link
@@ -166,6 +173,16 @@ private:
     // The composed output frame.
     std::vector<uint32_t> m_frame = std::vector<uint32_t>(TilemapRenderer::k_pixel_count, 0xFF000000u);
     std::unique_ptr<V60> m_cpu;
+    InterruptController m_interrupts;
+    GlueTimers m_timers;
+    bool m_uart_tx_ready = false; // main UART lines last seen (level 3 fires on a change)
+    bool m_uart_rx_ready = false;
+    // Updates the CPU's interrupt line from the controller.
+    void update_irq_line();
+    // Level 3: the main UART's TxRDY / RxRDY (MAME sound_ready_w). Raised
+    // when either line changes and one of them is high, or when `force`d
+    // (a mask write) while one is high.
+    void check_uart_interrupt(bool force);
     uint64_t m_frame_count = 0;
 
     // Cycles still owed to (positive) or overdrawn by (negative) the CPU.
@@ -180,6 +197,7 @@ private:
     // 68000 cycles owed, in eighths of a cycle (1 V60 cycle = 5/8 of one).
     int64_t m_sound_eighths = 0;
     int64_t m_io_quarters = 0; // I/O board Z80: 1/4 cycle per V60 cycle
+    int64_t m_dsb_quarters = 0; // Digital Sound Board Z80: likewise
     // V60 cycles not yet converted to UART clock ticks (32 per tick).
     uint32_t m_uart_remainder = 0;
     // V60 cycles x 5 not yet converted to audio samples (1,792 per 5 samples).

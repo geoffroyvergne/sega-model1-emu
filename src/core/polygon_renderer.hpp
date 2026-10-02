@@ -31,7 +31,8 @@ namespace model1 {
 //   0x01  3D object: +2 colour table address, +4 model address (bit 23:
 //         polygon RAM, else polygon ROM), +6 polygon count (0 = until the
 //         end marker); see push_object                          8 words
-//   0x41  3D object above the HUD (drawn in the same pass here)   8 words
+//   0x41  3D object above the HUD (e.g. Star Wars Arcade's radar
+//         blips), drawn in the above-HUD pass, see render       8 words
 //   0x02  direct polygons, see below                       variable
 //   0x03  viewport: +4 centre x, +6 centre y, +8 left, +10 bottom, +12 right,
 //         +14 top (16-bit; y values are stored as 422 - screen y)   16 words
@@ -120,18 +121,30 @@ public:
     uint16_t read_list_control(uint32_t offset) const;
     void     write_list_control(uint32_t offset, uint16_t value);
 
-    // Interprets the current display list and draws its polygons into
-    // `frame` (k_pixel_count pixels, 0xAARRGGBB). `display_lists` is the
-    // whole 128 KB display list RAM.
+    // The board draws the list in two passes around the HUD tilemaps
+    // (MAME's RENDER_BELOW_HUD / RENDER_ABOVE_HUD):
+    //   BelowHud  0x01 objects and 0x02 direct polygons, after the low
+    //             tilemap layers
+    //   AboveHud  0x41 objects, after the high (HUD) layers. They show only
+    //             where the HUD pixel is near-black (every channel <= 8): a
+    //             stencil, as MAME's, so the blips sit inside the radar
+    //             screen but under its grid lines and the cockpit struts.
+    // Every other command (viewports, matrices, uploads) runs in both.
+    enum class Pass { BelowHud, AboveHud };
+
+    // Interprets the current display list and draws one pass of its
+    // polygons into `frame` (k_pixel_count pixels, 0xAARRGGBB).
+    // `display_lists` is the whole 128 KB display list RAM.
     void render(std::span<const uint8_t> display_lists, std::span<const uint8_t> palette_ram,
-                std::span<const uint8_t> color_xlat, std::span<uint32_t> frame);
+                std::span<const uint8_t> color_xlat, std::span<uint32_t> frame, Pass pass = Pass::BelowHud);
 
     // Called once per frame at VBlank: swaps lists in automatic mode.
     void end_frame();
 
-    // Quads drawn by the last render() call (for diagnostics and tests).
+    // Quads drawn since the last BelowHud render() call, i.e. in this
+    // frame's passes so far (for diagnostics and tests).
     [[nodiscard]] std::size_t quads_drawn() const { return m_quads_drawn; }
-    // 3D objects (command 0x01 / 0x41) processed by the last render() call.
+    // 3D objects (command 0x01 / 0x41) processed, counted the same way.
     [[nodiscard]] std::size_t objects_drawn() const { return m_objects_drawn; }
 
     // Copies polygon ROM bytes (little-endian 32-bit words) to byte offset
@@ -190,7 +203,9 @@ private:
     [[nodiscard]] float    float_at(std::size_t offset) const;
 
     [[nodiscard]] bool use_list1();
-    std::size_t parse_direct(std::size_t offset);
+    // Queues the direct polygons at `offset` (only steps over them when
+    // `push` is false); returns the offset of the next command.
+    std::size_t parse_direct(std::size_t offset, bool push);
     // True if a command's `words` (header + payload) fit before the end of
     // the list; otherwise logs and the list ends (a garbage length would
     // otherwise run for billions of iterations).
@@ -238,6 +253,7 @@ private:
     std::array<LightParam, k_light_param_count> m_light_params{};
 
     std::vector<Quad> m_quads;
+    std::vector<uint32_t> m_hud; // the frame before the above-HUD pass
     std::size_t m_quads_drawn = 0;
     std::bitset<0x100> m_logged_commands;
 };

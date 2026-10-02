@@ -100,7 +100,9 @@ void IoBoard::write(uint16_t address, uint8_t value)
         return;
     }
     if (address >= k_adc_base && address < k_adc_base + 4) {
-        m_adc_shift = m_inputs.analog(address - k_adc_base); // select channel, latch its value
+        // Select a channel and latch its value. Port A bit 0 switches the
+        // ADC inputs to channels 4-7 (two 74HC4066 analog switches).
+        m_adc_shift = m_inputs.analog(address - k_adc_base + (m_select_dip_switches ? 4 : 0));
         return;
     }
     log_unmapped(address < k_rom_window ? "write to ROM" : "write", address);

@@ -815,6 +815,13 @@ CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/default_three_way_comparator.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/no_destroy.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/scope_guard.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__hash_table \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/try_key_extraction.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/remove_const_ref.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/erase_if_container.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__node_handle \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/container_traits.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/functional \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/binary_negate.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/bind.h \
@@ -829,13 +836,7 @@ CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/strip_signature.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/boyer_moore_searcher.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_map \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__hash_table \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/try_key_extraction.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/remove_const_ref.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/erase_if_container.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/ranges_iterator_traits.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__node_handle \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/container_traits.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/default_searcher.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/not_fn.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/perfect_forward.h \
@@ -947,19 +948,21 @@ CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/cstdarg \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/span \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/span.h \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/dual_port_ram.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/io_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.hpp \
-  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
-  /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.hpp \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.hpp \

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <bitset>
+#include <functional>
 #include <cstdint>
 #include <optional>
 
@@ -145,6 +146,13 @@ public:
     // pending, the lowest vector number is taken first.
     void request_interrupt(uint8_t vector);
 
+    // Maskable interrupt input as a level-triggered line (how the Model 1
+    // interrupt controller drives it): while asserted and PSW.IE is set,
+    // the CPU takes an interrupt, asking `acknowledge` for the vector
+    // number. Latched requests (request_interrupt) are taken first.
+    void set_irq_line(bool asserted) { m_irq_line = asserted; }
+    void set_irq_acknowledge(std::function<uint8_t()> acknowledge) { m_irq_acknowledge = std::move(acknowledge); }
+
     [[nodiscard]] bool is_halted() const { return m_halt_reason != HaltReason::None; }
     [[nodiscard]] bool has_pending_interrupt() const { return m_pending_irqs.any(); }
     [[nodiscard]] uint64_t instruction_count() const { return m_instruction_count; }
@@ -207,11 +215,14 @@ private:
         k_op_rem_w    = 0x54,
         k_op_remu_w   = 0x55,
         k_op_bit_field = 0x5D, // bit-field group: EXTBFS/Z/L, INSBFR/L (sub-opcode follows)
+        k_op_bit_string = 0x5B,
         k_op_float     = 0x5C, // single-precision float group (sub-opcode follows)
         k_op_float_convert = 0x5F, // CVTWS / CVTSW (sub-opcode follows)
         k_op_string_b = 0x58, // string instructions on bytes (sub-opcode follows)
         k_op_string_h = 0x5A, // string instructions on halfwords
         k_op_mov_w    = 0x2D,
+        k_op_movd     = 0x3F, // 64-bit move
+        k_op_decimal  = 0x59, // BCD group: ADDDC / SUBDC / SUBRDC / CVTDPZ / CVTDZP
         k_op_not_b    = 0x38,
         k_op_neg_b    = 0x39, // dst = 0 - src
         k_op_not_h    = 0x3A,
@@ -320,6 +331,17 @@ private:
         k_op_test_w_m1 = 0xF5,
         k_op_retis_m0 = 0xFA,
         k_op_retis_m1 = 0xFB,
+        k_op_rvbit    = 0x08, // reverse the bits of a byte
+        k_op_rvbyt    = 0x2C, // reverse the bytes of a word
+        k_op_dispose  = 0xCC, // destroy a stack frame
+        k_op_prepare_m0 = 0xDE, // create a stack frame
+        k_op_prepare_m1 = 0xDF,
+        k_op_tasi_m0  = 0xE0, // test and set (byte)
+        k_op_tasi_m1  = 0xE1,
+        k_op_retiu_m0 = 0xEA, // return from interrupt (user stack): as RETIS
+        k_op_retiu_m1 = 0xEB,
+        k_op_getpsw_m0 = 0xF6, // store the PSW
+        k_op_getpsw_m1 = 0xF7,
     };
 
     // Branch condition, selected by the low nibble of a Bcc opcode.
@@ -406,6 +428,15 @@ private:
     void op_branch(Condition condition, bool long_displacement);
     void op_jmp(bool mode_m);
     void op_mov(OperandSize size);
+    void op_move_double();
+    void op_reverse(bool bits);
+    void op_decimal();
+    void op_compare_string(OperandSize size, bool fill, bool stop_at_r26);
+    void op_search_string_down(OperandSize size, bool search_equal);
+    void op_prepare(bool mode_m);
+    void op_dispose();
+    void op_tasi(bool mode_m);
+    void op_getpsw(bool mode_m);
     void op_add_sub(bool subtract, OperandSize size);
     void op_add_sub_carry(bool subtract, OperandSize size);
     void op_cmp(OperandSize size);
@@ -414,6 +445,7 @@ private:
     void op_neg(OperandSize size);
     void op_setf();
     void op_bit_field();
+    void op_bit_string();
     void op_float(bool convert_group);
     // Bit addressing (bit-field instructions): a general operand decoded as
     // an address plus a signed bit offset (see decode_operand). Registers
@@ -501,6 +533,8 @@ private:
 
     // One bit per interrupt vector number awaiting acknowledgement.
     std::bitset<256> m_pending_irqs;
+    bool m_irq_line = false;
+    std::function<uint8_t()> m_irq_acknowledge;
 
     HaltReason m_halt_reason = HaltReason::None;
     uint64_t   m_instruction_count = 0;

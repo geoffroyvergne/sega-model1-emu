@@ -998,21 +998,24 @@ CMakeFiles/emulator_tests.dir/tests/test_polygons.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/sstream \
   /Users/gv/dev/projects/sega-model1-emu/src/core/motherboard.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/bus.hpp \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/span \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/span.h \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/dual_port_ram.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/io_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.hpp \
-  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
-  /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.hpp \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.hpp \

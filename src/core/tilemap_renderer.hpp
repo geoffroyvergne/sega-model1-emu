@@ -52,8 +52,9 @@ namespace model1 {
 // Layer order (Model 1 screen update, back to front):
 //   render_background(): tilemaps 3, 2 low priority, opaque
 //                        tilemaps 1, 0 low priority, transparent
-//   [3D polygons, drawn into the same frame by the PolygonRenderer]
+//   [3D polygons below the HUD: 0x01 objects, 0x02 direct polygons]
 //   render_foreground(): tilemaps 3, 2, 1, 0 high priority, transparent (HUD)
+//   [3D polygons above the HUD: 0x41 objects, through dark HUD pixels]
 class TilemapRenderer {
 public:
     static constexpr int k_width = 496;

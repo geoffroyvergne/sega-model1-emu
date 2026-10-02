@@ -1,10 +1,10 @@
-Start testing: Oct 01 20:48 CEST
+Start testing: Oct 02 15:53 CEST
 ----------------------------------------------------------
 1/2 Testing: emulator_tests
 1/2 Test: emulator_tests
 Command: "/Users/gv/dev/projects/sega-model1-emu/build/emulator_tests"
 Directory: /Users/gv/dev/projects/sega-model1-emu/build
-"emulator_tests" start time: Oct 01 20:48 CEST
+"emulator_tests" start time: Oct 02 15:53 CEST
 Output:
 ----------------------------------------------------------
 Running emulator tests
@@ -71,7 +71,21 @@ Running emulator tests
   [PASS] v60_add_then_addc_chains_64_bit_addition
   [PASS] v60_addc_byte_flags_and_partial_register_write
   [PASS] v60_subc_borrows_through_carry
-  [PASS] system_registers_latch_writes_and_keep_bank_register
+  [FAIL] system_registers_latch_writes_and_keep_bank_register
+         /Users/gv/dev/projects/sega-model1-emu/tests/test_v60_boot.cpp:313: CHECK_EQ(bus.read_word(0xE00006), 0x0001u) failed: got 0x0, expected 0x1
+         /Users/gv/dev/projects/sega-model1-emu/tests/test_v60_boot.cpp:315: CHECK(log_contains("System register write16 at 0x00E00006")) failed
+         --- emulator log ---
+         [Bus] Created (Model 1 memory map, 11 memory regions)
+         [Motherboard] Created
+         [68000] Reset, SSP=0xFFFFFFFF PC=0xFFFFFFFF
+         [V60] Reset, PC=0xFFFFFFF0
+         [Motherboard] Reset
+         [Bus] System register write8 at 0x00E0001F = 0x00000003 (latched, no device emulated yet)
+         [Bus] CRITICAL: unmapped write8 at 0x00E01000 (value 0x00000001), ignored (logged once per address)
+         [68000] Reset, SSP=0xFFFFFFFF PC=0xFFFFFFFF
+         [V60] Reset, PC=0xFFFFFFF0
+         [Motherboard] Reset
+         [Motherboard] Destroyed after 0 frames
   [PASS] v60_out_to_serial_stub_port_is_accepted
   [PASS] v60_cmp_halfword_vr_boot_then_branch_lower
   [PASS] v60_cmp_word_overflow_and_byte_immediates
@@ -117,6 +131,16 @@ Running emulator tests
   [PASS] v60_movcfd_fills_upper_part
   [PASS] v60_xch_swaps_registers_like_vr
   [PASS] v60_xch_halfword_with_memory
+  [PASS] v60_bit_string_search_like_vf
+  [PASS] v60_bit_string_moves_up_and_down
+  [PASS] v60_level_triggered_interrupt_line
+  [PASS] v60_movd_moves_64_bits_like_vf
+  [PASS] v60_reverse_bits_and_bytes
+  [PASS] v60_prepare_and_dispose_stack_frame
+  [PASS] v60_tasi_and_getpsw
+  [PASS] v60_string_compare
+  [PASS] v60_string_search_down
+  [PASS] v60_decimal_arithmetic_and_conversion
   [PASS] m68000_move_immediate_to_sr_sets_flags_and_mask
   [PASS] m68000_move_to_sr_leaving_supervisor_switches_stack
   [PASS] m68000_move_to_sr_unmasks_pending_interrupt
@@ -155,6 +179,8 @@ Running emulator tests
   [PASS] m68000_divide
   [PASS] m68000_bcd_and_exchange
   [PASS] m68000_tst_sets_n_and_z_like_vr
+  [PASS] m68000_movem_saves_and_restores_registers
+  [PASS] m68000_neg_negx_not_ext
   [PASS] tilemap_color_decoding
   [PASS] tilemap_empty_video_memory_is_pen_zero
   [PASS] tilemap_pixel_order_inside_a_tile
@@ -167,6 +193,8 @@ Running emulator tests
   [PASS] tilemap_worst_case_registers_render_safely
   [PASS] tilemap_undersized_buffers_are_refused
   [PASS] tilemap_demo_hud_text_renders
+  [PASS] tilemap_special_mode_1_splits_at_a_line
+  [PASS] tilemap_special_mode_2_splits_at_a_column
   [PASS] polygon_rendering_requires_enable_mask
   [PASS] polygon_fill_covers_exact_pixels
   [PASS] polygon_painters_algorithm_far_to_near
@@ -202,6 +230,7 @@ Running emulator tests
   [PASS] sound_cpu_runs_in_lockstep_with_main_cpu
   [PASS] uart_software_reset_sequence_is_silent_and_ends_asynchronous
   [PASS] sound_bus_logs_each_unmapped_address_once
+  [PASS] interrupt_controller_mask_ack_and_sources
   [PASS] multipcm_slot_select_and_key
   [PASS] multipcm_pitch_step
   [PASS] multipcm_8bit_sample_level_pan_and_attenuation
@@ -211,10 +240,23 @@ Running emulator tests
   [PASS] multipcm_sound_bus_mapping
   [PASS] multipcm_demo_tone_is_440_hz
   [PASS] multipcm_audio_generated_in_lockstep
+  [PASS] multipcm_envelope_attack_decay_release
+  [PASS] multipcm_envelope_rate_zero_holds_and_fifteen_is_instant
+  [PASS] multipcm_envelope_registers_override_the_header
+  [PASS] multipcm_attenuation_glides_when_bit_0_is_clear
+  [PASS] multipcm_vibrato_and_tremolo
   [PASS] ym3438_timer_a_overflows_after_its_period
   [PASS] ym3438_timer_b_and_flag_enables
   [PASS] ym3438_stopped_timer_reloads_when_restarted
   [PASS] ym3438_vr_sound_program_waits_for_timer_a
+  [PASS] ym3438_fm_sine_pitch_and_level
+  [PASS] ym3438_fm_pan_and_channel_select
+  [PASS] ym3438_fm_envelope_attack_and_release
+  [PASS] ym3438_fm_algorithm_modulation_and_feedback
+  [PASS] ym3438_fm_frequency_high_byte_is_latched
+  [PASS] ym3438_dac_replaces_channel_6
+  [PASS] ym3438_lfo_tremolo
+  [PASS] ym3438_fm_stream_mixed_in_lockstep
   [PASS] rom_crc32_reference_value
   [PASS] rom_virtua_fighter_set_lands_in_the_right_places
   [PASS] rom_virtua_racing_detected_and_case_insensitive
@@ -228,24 +270,14 @@ Running emulator tests
   [PASS] io_shared_ram_vr_boot_accesses_read_back
   [PASS] io_shared_ram_byte_lanes_and_window
 [Input] Coin inserted (Coin 1)! System port bitmask: 0xFFFF -> 0xFFFE
-  [FAIL] io_inputs_published_into_shared_ram
-         /Users/gv/dev/projects/sega-model1-emu/tests/test_io_board.cpp:96: CHECK_EQ(bus.read_word(0xC00000), 0x0000u) failed: got 0xFF, expected 0x0
-         --- emulator log ---
-         [Bus] Created (Model 1 memory map, 11 memory regions)
-         [Motherboard] Created
-         [68000] Reset, SSP=0xFFFFFFFF PC=0xFFFFFFFF
-         [V60] Reset, PC=0xFFFFFFF0
-         [Motherboard] Reset
-         [V60] CRITICAL: unimplemented opcode 0xFF at PC=0xFFFFFFF0, CPU halted
-         [68000] CRITICAL: address error: instruction fetch from an odd address (exception not emulated) at PC=0xFFFFFFFF, CPU halted
-         [V60] IRQ requested: vector 0x01 (pending, PSW.IE=0)
-         [Motherboard] Destroyed after 1 frames
+  [PASS] io_inputs_published_into_shared_ram
   [PASS] io_board_acknowledges_game_commands_once_per_frame
   [PASS] io_inputs_virtua_racing_controls
   [PASS] io_inputs_virtua_fighter_has_no_analog_controls
   [PASS] eeprom_write_protect_write_busy_ready_and_read
 [Input] Coin inserted (Coin 1)! System port bitmask: 0xFFFF -> 0xFFFE
-  [PASS] io_board_io_controller_reaches_shared_ram_and_adc
+  [FAIL] io_board_io_controller_reaches_shared_ram_and_adc
+         /Users/gv/dev/projects/sega-model1-emu/tests/test_io_board.cpp:399: CHECK_EQ(value, 0x80u) failed: got 0xFF, expected 0x80
 [Input] Coin inserted (Coin 1)! System port bitmask: 0xFFFF -> 0xFFFE
   [PASS] io_board_firmware_copies_inputs_into_shared_ram
   [PASS] z80_add_and_compare_flags
@@ -264,21 +296,22 @@ Running emulator tests
   [PASS] tgp_dsp_multiply_accumulate_and_repeat
   [PASS] tgp_copro_ram_auto_increment_both_sides
   [PASS] tgp_copro_sincos_table_and_data_rom_window
+  [PASS] tgp_dsp_runs_alongside_the_v60
 
-240 passed, 1 failed
+268 passed, 2 failed
 <end of output>
-Test time =  21.30 sec
+Test time =   3.18 sec
 ----------------------------------------------------------
 Test Failed.
-"emulator_tests" end time: Oct 01 20:49 CEST
-"emulator_tests" time elapsed: 00:00:21
+"emulator_tests" end time: Oct 02 15:53 CEST
+"emulator_tests" time elapsed: 00:00:03
 ----------------------------------------------------------
 
 2/2 Testing: host_tests
 2/2 Test: host_tests
 Command: "/Users/gv/dev/projects/sega-model1-emu/build/host_tests"
 Directory: /Users/gv/dev/projects/sega-model1-emu/build
-"host_tests" start time: Oct 01 20:49 CEST
+"host_tests" start time: Oct 02 15:53 CEST
 Output:
 ----------------------------------------------------------
 Running emulator tests
@@ -287,14 +320,16 @@ Running emulator tests
   [PASS] audio_default_device_open_close_if_available
   [PASS] audio_emulator_with_sound_starts_and_stops_cleanly
   [PASS] audio_resampler_output_count
+  [PASS] audio_rate_factor_steers_toward_the_target
+  [PASS] audio_steady_deliveries_play_without_underruns
 
-4 passed, 0 failed
+6 passed, 0 failed
 <end of output>
-Test time =   4.37 sec
+Test time =   3.57 sec
 ----------------------------------------------------------
 Test Passed.
-"host_tests" end time: Oct 01 20:49 CEST
-"host_tests" time elapsed: 00:00:04
+"host_tests" end time: Oct 02 15:53 CEST
+"host_tests" time elapsed: 00:00:03
 ----------------------------------------------------------
 
-End testing: Oct 01 20:49 CEST
+End testing: Oct 02 15:53 CEST

@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Users/gv/dev/projects/sega-model1-emu/tests/test_dsb.cpp" "CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o" "gcc" "CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/tests/test_io_board.cpp" "CMakeFiles/emulator_tests.dir/tests/test_io_board.cpp.o" "gcc" "CMakeFiles/emulator_tests.dir/tests/test_io_board.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/tests/test_m68000.cpp" "CMakeFiles/emulator_tests.dir/tests/test_m68000.cpp.o" "gcc" "CMakeFiles/emulator_tests.dir/tests/test_m68000.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/tests/test_main.cpp" "CMakeFiles/emulator_tests.dir/tests/test_main.cpp.o" "gcc" "CMakeFiles/emulator_tests.dir/tests/test_main.cpp.o.d"

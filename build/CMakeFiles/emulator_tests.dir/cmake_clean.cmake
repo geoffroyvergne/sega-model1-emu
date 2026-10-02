@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o"
+  "CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o.d"
   "CMakeFiles/emulator_tests.dir/tests/test_io_board.cpp.o"
   "CMakeFiles/emulator_tests.dir/tests/test_io_board.cpp.o.d"
   "CMakeFiles/emulator_tests.dir/tests/test_m68000.cpp.o"

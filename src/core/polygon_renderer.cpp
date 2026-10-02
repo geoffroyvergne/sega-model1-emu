@@ -167,10 +167,12 @@ void PolygonRenderer::log_once(unsigned command, const char* message)
 // ---------------------------------------------------------------------------
 
 void PolygonRenderer::render(std::span<const uint8_t> display_lists, std::span<const uint8_t> palette_ram,
-                             std::span<const uint8_t> color_xlat, std::span<uint32_t> frame)
+                             std::span<const uint8_t> color_xlat, std::span<uint32_t> frame, Pass pass)
 {
-    m_quads_drawn = 0;
-    m_objects_drawn = 0;
+    if (pass == Pass::BelowHud) {
+        m_quads_drawn = 0;
+        m_objects_drawn = 0;
+    }
     if ((m_list_control[1] & 0x1F) != 0x1F) {
         return; // rendering disabled
     }
@@ -186,6 +188,10 @@ void PolygonRenderer::render(std::span<const uint8_t> display_lists, std::span<c
     m_color_xlat = color_xlat;
     m_frame = frame;
     m_quads.clear();
+    const bool above_hud = pass == Pass::AboveHud;
+    if (above_hud) {
+        m_hud.assign(frame.begin(), frame.begin() + static_cast<std::ptrdiff_t>(k_pixel_count));
+    }
     // Each list starts with an identity object matrix (as in MAME); zoom,
     // light and view translation carry over from previous frames.
     m_object_view.matrix = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
@@ -205,12 +211,14 @@ void PolygonRenderer::render(std::span<const uint8_t> display_lists, std::span<c
             offset += k_nop_words;
             break;
         case 0x01:
-        case 0x41: // 0x41 is drawn above the HUD on the board; here in the same pass as 0x01
-            push_object(long_at(offset + 2), long_at(offset + 4), long_at(offset + 6));
+        case 0x41:
+            if ((command == 0x41) == above_hud) {
+                push_object(long_at(offset + 2), long_at(offset + 4), long_at(offset + 6));
+            }
             offset += k_object_words;
             break;
         case 0x02:
-            offset = parse_direct(offset);
+            offset = parse_direct(offset, !above_hud);
             break;
         case 0x03: {
             // Pending quads are drawn with the viewport they were queued under.
@@ -336,6 +344,18 @@ void PolygonRenderer::render(std::span<const uint8_t> display_lists, std::span<c
     }
     flush_quads();
 
+    if (above_hud) {
+        // HUD features (any channel above near-black) stay on top.
+        constexpr uint32_t k_feature_level = 8;
+        for (std::size_t i = 0; i < k_pixel_count; ++i) {
+            const uint32_t px = m_hud[i];
+            if (((px >> 16) & 0xFF) > k_feature_level || ((px >> 8) & 0xFF) > k_feature_level
+                || (px & 0xFF) > k_feature_level) {
+                frame[i] = px;
+            }
+        }
+    }
+
     m_list = {};
     m_palette_ram = {};
     m_color_xlat = {};
@@ -349,7 +369,7 @@ void PolygonRenderer::project(Point& p) const
     p.sy = to_screen(m_view.yc - p.y);
 }
 
-std::size_t PolygonRenderer::parse_direct(std::size_t offset)
+std::size_t PolygonRenderer::parse_direct(std::size_t offset, bool push)
 {
     uint32_t color_address = long_at(offset + 2);
     Point first{float_at(offset + 6), float_at(offset + 8), float_at(offset + 10)};
@@ -387,7 +407,7 @@ std::size_t PolygonRenderer::parse_direct(std::size_t offset)
         project(p1);
 
         const uint32_t link = (flags >> 8) & 3;
-        if (link != 0) {
+        if (link != 0 && push) {
             Quad quad;
             quad.p = {second, first, p0, p1};
             quad.z = sort_z;

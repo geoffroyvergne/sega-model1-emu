@@ -9,7 +9,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp" "CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o" "gcc" "CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o.d"
+  "/Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp" "CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o" "gcc" "CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o.d"
+  "/Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp" "CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o" "gcc" "CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/tests/test_audio_host.cpp" "CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.o" "gcc" "CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.o.d"
+  "/Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp" "CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o" "gcc" "CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/tests/test_main.cpp" "CMakeFiles/host_tests.dir/tests/test_main.cpp.o" "gcc" "CMakeFiles/host_tests.dir/tests/test_main.cpp.o.d"
   )
 

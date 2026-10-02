@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <span>
 
@@ -24,7 +25,9 @@ namespace model1 {
 // each and the YM3438 FM chip at 0.3. The YM3438 runs at 8 MHz from the
 // 68000's cycle count and produces a sample every 144 clocks (55,555.6 Hz),
 // exactly 56 FM samples for every 45 mixed samples; its stream is
-// resampled by linear interpolation.
+// resampled by linear interpolation. An optional music source (Star Wars
+// Arcade's Digital Sound Board) is added at full level, as MAME's separate
+// "mpeg" speaker.
 class SoundBoard {
 public:
     static constexpr uint32_t k_cpu_clock_hz = 10'000'000;
@@ -60,6 +63,11 @@ public:
     [[nodiscard]] MultiPCM& pcm2() { return *m_pcm2; }
     [[nodiscard]] Ym3438& ym() { return *m_ym; }
 
+    // Music from another board, rendered at k_audio_rate_hz into the given
+    // interleaved stereo span and added to the mix (empty: none).
+    using MusicSource = std::function<void(std::span<int16_t>)>;
+    void set_music_source(MusicSource source) { m_music = std::move(source); }
+
     // Renders `frames` more stereo frames of mixed output into the internal
     // buffer (frames beyond its free space are dropped and counted).
     void generate_audio(std::size_t frames);
@@ -87,6 +95,8 @@ private:
     std::array<int16_t, k_audio_buffer_frames * 2> m_audio{};
     std::array<int16_t, k_audio_buffer_frames * 2> m_scratch1{};
     std::array<int16_t, k_audio_buffer_frames * 2> m_scratch2{};
+    std::array<int16_t, k_audio_buffer_frames * 2> m_scratch_music{};
+    MusicSource m_music;
     std::size_t m_audio_frames = 0;
     uint64_t m_audio_generated = 0;
     uint64_t m_audio_dropped = 0;

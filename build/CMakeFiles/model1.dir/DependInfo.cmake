@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp" "CMakeFiles/model1.dir/src/audio/audio_output.cpp.o" "gcc" "CMakeFiles/model1.dir/src/audio/audio_output.cpp.o.d"
+  "/Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp" "CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o" "gcc" "CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp" "CMakeFiles/model1.dir/src/input/keyboard_input.cpp.o" "gcc" "CMakeFiles/model1.dir/src/input/keyboard_input.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/main.cpp" "CMakeFiles/model1.dir/src/main.cpp.o" "gcc" "CMakeFiles/model1.dir/src/main.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/video/video_manager.cpp" "CMakeFiles/model1.dir/src/video/video_manager.cpp.o" "gcc" "CMakeFiles/model1.dir/src/video/video_manager.cpp.o.d"

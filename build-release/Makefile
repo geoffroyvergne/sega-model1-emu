@@ -205,6 +205,30 @@ src/audio/audio_output.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.s
 .PHONY : src/audio/audio_output.cpp.s
 
+src/audio/mp2_decoder.o: src/audio/mp2_decoder.cpp.o
+.PHONY : src/audio/mp2_decoder.o
+
+# target to build an object file
+src/audio/mp2_decoder.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o
+.PHONY : src/audio/mp2_decoder.cpp.o
+
+src/audio/mp2_decoder.i: src/audio/mp2_decoder.cpp.i
+.PHONY : src/audio/mp2_decoder.i
+
+# target to preprocess a source file
+src/audio/mp2_decoder.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.i
+.PHONY : src/audio/mp2_decoder.cpp.i
+
+src/audio/mp2_decoder.s: src/audio/mp2_decoder.cpp.s
+.PHONY : src/audio/mp2_decoder.s
+
+# target to generate assembly for a file
+src/audio/mp2_decoder.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.s
+.PHONY : src/audio/mp2_decoder.cpp.s
+
 src/audio/multipcm.o: src/audio/multipcm.cpp.o
 .PHONY : src/audio/multipcm.o
 
@@ -277,6 +301,30 @@ src/core/bus.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/bus.cpp.s
 .PHONY : src/core/bus.cpp.s
 
+src/core/digital_sound_board.o: src/core/digital_sound_board.cpp.o
+.PHONY : src/core/digital_sound_board.o
+
+# target to build an object file
+src/core/digital_sound_board.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o
+.PHONY : src/core/digital_sound_board.cpp.o
+
+src/core/digital_sound_board.i: src/core/digital_sound_board.cpp.i
+.PHONY : src/core/digital_sound_board.i
+
+# target to preprocess a source file
+src/core/digital_sound_board.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.i
+.PHONY : src/core/digital_sound_board.cpp.i
+
+src/core/digital_sound_board.s: src/core/digital_sound_board.cpp.s
+.PHONY : src/core/digital_sound_board.s
+
+# target to generate assembly for a file
+src/core/digital_sound_board.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.s
+.PHONY : src/core/digital_sound_board.cpp.s
+
 src/core/eeprom_93c46.o: src/core/eeprom_93c46.cpp.o
 .PHONY : src/core/eeprom_93c46.o
 
@@ -348,6 +396,30 @@ src/core/input_manager.s: src/core/input_manager.cpp.s
 src/core/input_manager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/input_manager.cpp.s
 .PHONY : src/core/input_manager.cpp.s
+
+src/core/interrupt_controller.o: src/core/interrupt_controller.cpp.o
+.PHONY : src/core/interrupt_controller.o
+
+# target to build an object file
+src/core/interrupt_controller.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o
+.PHONY : src/core/interrupt_controller.cpp.o
+
+src/core/interrupt_controller.i: src/core/interrupt_controller.cpp.i
+.PHONY : src/core/interrupt_controller.i
+
+# target to preprocess a source file
+src/core/interrupt_controller.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.i
+.PHONY : src/core/interrupt_controller.cpp.i
+
+src/core/interrupt_controller.s: src/core/interrupt_controller.cpp.s
+.PHONY : src/core/interrupt_controller.s
+
+# target to generate assembly for a file
+src/core/interrupt_controller.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.s
+.PHONY : src/core/interrupt_controller.cpp.s
 
 src/core/io_board.o: src/core/io_board.cpp.o
 .PHONY : src/core/io_board.o
@@ -661,12 +733,40 @@ src/core/z80.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1_core.dir/build.make CMakeFiles/model1_core.dir/src/core/z80.cpp.s
 .PHONY : src/core/z80.cpp.s
 
+src/input/gamepad_input.o: src/input/gamepad_input.cpp.o
+.PHONY : src/input/gamepad_input.o
+
+# target to build an object file
+src/input/gamepad_input.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1.dir/build.make CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o
+.PHONY : src/input/gamepad_input.cpp.o
+
+src/input/gamepad_input.i: src/input/gamepad_input.cpp.i
+.PHONY : src/input/gamepad_input.i
+
+# target to preprocess a source file
+src/input/gamepad_input.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1.dir/build.make CMakeFiles/model1.dir/src/input/gamepad_input.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.i
+.PHONY : src/input/gamepad_input.cpp.i
+
+src/input/gamepad_input.s: src/input/gamepad_input.cpp.s
+.PHONY : src/input/gamepad_input.s
+
+# target to generate assembly for a file
+src/input/gamepad_input.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1.dir/build.make CMakeFiles/model1.dir/src/input/gamepad_input.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.s
+.PHONY : src/input/gamepad_input.cpp.s
+
 src/input/keyboard_input.o: src/input/keyboard_input.cpp.o
 .PHONY : src/input/keyboard_input.o
 
 # target to build an object file
 src/input/keyboard_input.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1.dir/build.make CMakeFiles/model1.dir/src/input/keyboard_input.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o
 .PHONY : src/input/keyboard_input.cpp.o
 
 src/input/keyboard_input.i: src/input/keyboard_input.cpp.i
@@ -675,6 +775,7 @@ src/input/keyboard_input.i: src/input/keyboard_input.cpp.i
 # target to preprocess a source file
 src/input/keyboard_input.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1.dir/build.make CMakeFiles/model1.dir/src/input/keyboard_input.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.i
 .PHONY : src/input/keyboard_input.cpp.i
 
 src/input/keyboard_input.s: src/input/keyboard_input.cpp.s
@@ -683,6 +784,7 @@ src/input/keyboard_input.s: src/input/keyboard_input.cpp.s
 # target to generate assembly for a file
 src/input/keyboard_input.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model1.dir/build.make CMakeFiles/model1.dir/src/input/keyboard_input.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.s
 .PHONY : src/input/keyboard_input.cpp.s
 
 src/main.o: src/main.cpp.o
@@ -756,6 +858,54 @@ tests/test_audio_host.s: tests/test_audio_host.cpp.s
 tests/test_audio_host.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/tests/test_audio_host.cpp.s
 .PHONY : tests/test_audio_host.cpp.s
+
+tests/test_dsb.o: tests/test_dsb.cpp.o
+.PHONY : tests/test_dsb.o
+
+# target to build an object file
+tests/test_dsb.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/emulator_tests.dir/build.make CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o
+.PHONY : tests/test_dsb.cpp.o
+
+tests/test_dsb.i: tests/test_dsb.cpp.i
+.PHONY : tests/test_dsb.i
+
+# target to preprocess a source file
+tests/test_dsb.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/emulator_tests.dir/build.make CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.i
+.PHONY : tests/test_dsb.cpp.i
+
+tests/test_dsb.s: tests/test_dsb.cpp.s
+.PHONY : tests/test_dsb.s
+
+# target to generate assembly for a file
+tests/test_dsb.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/emulator_tests.dir/build.make CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.s
+.PHONY : tests/test_dsb.cpp.s
+
+tests/test_input_host.o: tests/test_input_host.cpp.o
+.PHONY : tests/test_input_host.o
+
+# target to build an object file
+tests/test_input_host.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o
+.PHONY : tests/test_input_host.cpp.o
+
+tests/test_input_host.i: tests/test_input_host.cpp.i
+.PHONY : tests/test_input_host.i
+
+# target to preprocess a source file
+tests/test_input_host.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/tests/test_input_host.cpp.i
+.PHONY : tests/test_input_host.cpp.i
+
+tests/test_input_host.s: tests/test_input_host.cpp.s
+.PHONY : tests/test_input_host.s
+
+# target to generate assembly for a file
+tests/test_input_host.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/host_tests.dir/build.make CMakeFiles/host_tests.dir/tests/test_input_host.cpp.s
+.PHONY : tests/test_input_host.cpp.s
 
 tests/test_io_board.o: tests/test_io_board.cpp.o
 .PHONY : tests/test_io_board.o
@@ -1112,6 +1262,9 @@ help:
 	@echo "... src/audio/audio_output.o"
 	@echo "... src/audio/audio_output.i"
 	@echo "... src/audio/audio_output.s"
+	@echo "... src/audio/mp2_decoder.o"
+	@echo "... src/audio/mp2_decoder.i"
+	@echo "... src/audio/mp2_decoder.s"
 	@echo "... src/audio/multipcm.o"
 	@echo "... src/audio/multipcm.i"
 	@echo "... src/audio/multipcm.s"
@@ -1121,6 +1274,9 @@ help:
 	@echo "... src/core/bus.o"
 	@echo "... src/core/bus.i"
 	@echo "... src/core/bus.s"
+	@echo "... src/core/digital_sound_board.o"
+	@echo "... src/core/digital_sound_board.i"
+	@echo "... src/core/digital_sound_board.s"
 	@echo "... src/core/eeprom_93c46.o"
 	@echo "... src/core/eeprom_93c46.i"
 	@echo "... src/core/eeprom_93c46.s"
@@ -1130,6 +1286,9 @@ help:
 	@echo "... src/core/input_manager.o"
 	@echo "... src/core/input_manager.i"
 	@echo "... src/core/input_manager.s"
+	@echo "... src/core/interrupt_controller.o"
+	@echo "... src/core/interrupt_controller.i"
+	@echo "... src/core/interrupt_controller.s"
 	@echo "... src/core/io_board.o"
 	@echo "... src/core/io_board.i"
 	@echo "... src/core/io_board.s"
@@ -1169,6 +1328,9 @@ help:
 	@echo "... src/core/z80.o"
 	@echo "... src/core/z80.i"
 	@echo "... src/core/z80.s"
+	@echo "... src/input/gamepad_input.o"
+	@echo "... src/input/gamepad_input.i"
+	@echo "... src/input/gamepad_input.s"
 	@echo "... src/input/keyboard_input.o"
 	@echo "... src/input/keyboard_input.i"
 	@echo "... src/input/keyboard_input.s"
@@ -1181,6 +1343,12 @@ help:
 	@echo "... tests/test_audio_host.o"
 	@echo "... tests/test_audio_host.i"
 	@echo "... tests/test_audio_host.s"
+	@echo "... tests/test_dsb.o"
+	@echo "... tests/test_dsb.i"
+	@echo "... tests/test_dsb.s"
+	@echo "... tests/test_input_host.o"
+	@echo "... tests/test_input_host.i"
+	@echo "... tests/test_input_host.s"
 	@echo "... tests/test_io_board.o"
 	@echo "... tests/test_io_board.i"
 	@echo "... tests/test_io_board.s"

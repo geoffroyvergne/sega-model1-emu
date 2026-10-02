@@ -145,6 +145,7 @@ private:
     uint32_t execute_add_sub(uint16_t opcode);
     uint32_t execute_compare_eor(uint16_t opcode);
     uint32_t execute_or_and(uint16_t opcode);
+    uint32_t execute_movem(uint16_t opcode);
     uint32_t add_sub_flags(uint32_t dst, uint32_t src, bool subtract, Size size, bool update_x);
     Ea decode_ea(uint32_t mode, uint32_t reg, Size size);
     uint32_t indexed_address(uint32_t base);

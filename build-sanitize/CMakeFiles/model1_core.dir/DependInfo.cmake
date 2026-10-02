@@ -8,12 +8,15 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp" "CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.cpp" "CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.cpp" "CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/bus.cpp" "CMakeFiles/model1_core.dir/src/core/bus.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/bus.cpp.o.d"
+  "/Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp" "CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.cpp" "CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/i8251.cpp" "CMakeFiles/model1_core.dir/src/core/i8251.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/i8251.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.cpp" "CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o.d"
+  "/Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp" "CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/io_board.cpp" "CMakeFiles/model1_core.dir/src/core/io_board.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/io_board.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/m68000.cpp" "CMakeFiles/model1_core.dir/src/core/m68000.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/m68000.cpp.o.d"
   "/Users/gv/dev/projects/sega-model1-emu/src/core/mb86233.cpp" "CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o" "gcc" "CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o.d"

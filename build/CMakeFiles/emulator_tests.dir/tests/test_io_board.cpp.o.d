@@ -1004,14 +1004,17 @@ CMakeFiles/emulator_tests.dir/tests/test_io_board.cpp.o: \
   /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/motherboard.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/bus.hpp \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.hpp \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.hpp \

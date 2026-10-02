@@ -145,10 +145,10 @@ TEST_CASE(v60_movcu_copies_and_movcsu_stops)
 TEST_CASE(v60_unimplemented_string_suboperation_halts)
 {
     StackRig rig;
-    rig.load({0x58, 0x19, 0x75, 0x04, 0x76, 0x04}); // SCHCD.B (downward search): not implemented
+    rig.load({0x58, 0x03, 0x75, 0x04, 0x76, 0x04}); // sub-opcode 0x03: unassigned (MAME too)
     rig.step();
     CHECK(rig.cpu->is_halted());
-    CHECK(log_contains("sub-opcode 0x19"));
+    CHECK(log_contains("sub-opcode 0x03"));
 }
 
 // ---------------------------------------------------------------------------
@@ -300,16 +300,19 @@ TEST_CASE(system_registers_latch_writes_and_keep_bank_register)
     board->reset();
     model1::Bus& bus = board->bus();
 
-    // VR boot: interrupt controller setup at 0xE00000-0xE0001F.
+    // VR boot: interrupt controller setup at 0xE00000-0xE0001F. 0xE00000
+    // (control, write-only) and 0xE00002 (mask) are the interrupt
+    // controller, 0xE00006-0xE0000F the timers; the rest is latched.
     bus.write_byte(0xE00000, 0x10);
-    bus.write_byte(0xE00002, 0xFF);
-    bus.write_word(0xE00006, 0x0001);
+    bus.write_byte(0xE00002, 0xFD);
+    bus.write_word(0xE00010, 0x0001);
     bus.write_byte(0xE0001F, 0x03);
-    CHECK_EQ(bus.read_byte(0xE00000), 0x10u);
-    CHECK_EQ(bus.read_byte(0xE00002), 0xFFu);
-    CHECK_EQ(bus.read_word(0xE00006), 0x0001u);
+    CHECK_EQ(bus.read_byte(0xE00000), 0u);
+    CHECK_EQ(bus.read_byte(0xE00002), 0xFDu);
+    CHECK_EQ(board->interrupts().mask(), 0xFDu);
+    CHECK_EQ(bus.read_word(0xE00010), 0x0001u);
     CHECK_EQ(bus.read_long(0xE0001C), 0x03000000u);
-    CHECK(log_contains("System register write8 at 0x00E00000"));
+    CHECK(log_contains("System register write16 at 0x00E00010"));
     CHECK(!log_contains("unmapped"));
 
     // 0xE00004 is still the data ROM bank register, not latched.
@@ -326,9 +329,10 @@ TEST_CASE(system_registers_latch_writes_and_keep_bank_register)
     bus.write_byte(0xE01000, 0x01);
     CHECK(log_contains("unmapped write8 at 0x00E01000"));
 
-    // Reset clears the latch.
+    // Reset clears the latch and masks every interrupt level again.
     board->reset();
-    CHECK_EQ(bus.read_byte(0xE00000), 0u);
+    CHECK_EQ(bus.read_byte(0xE0001F), 0u);
+    CHECK_EQ(bus.read_byte(0xE00002), 0xFFu);
 }
 
 TEST_CASE(v60_out_to_serial_stub_port_is_accepted)
@@ -1328,4 +1332,237 @@ TEST_CASE(v60_xch_halfword_with_memory)
     rig.step();
     CHECK_EQ(rig.cpu->reg(2), 0xAAAA5678u);       // low half only
     CHECK_EQ(rig.bus->read_long(k_data), 0xBBBB1234u);
+}
+
+// ---------------------------------------------------------------------------
+// Bit strings (0x5B): SCH0BSU / SCH1BSU, MOVBSU / MOVBSD
+// ---------------------------------------------------------------------------
+
+TEST_CASE(v60_bit_string_search_like_vf)
+{
+    // VF at 0xFFAFA5 uses SCH1BSU. SCH1BSU 0[R1], #24, R2: first 1 bit.
+    StackRig rig;
+    rig.cpu->set_reg(1, k_data);
+    rig.bus->write_byte(k_data, 0x00);
+    rig.bus->write_byte(k_data + 1, 0x00);
+    rig.bus->write_byte(k_data + 2, 0x10); // bit 20
+    rig.load({0x5B, 0x22, 0x01, 0x00, 0x18, 0x62,   // SCH1BSU 0[R1], #24, R2
+              0x5B, 0x22, 0x01, 0x00, 0x10, 0x63,   // SCH1BSU 0[R1], #16, R3: none
+              0x5B, 0x20, 0x01, 0x00, 0x10, 0x64}); // SCH0BSU 0[R1], #16, R4
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(2), 20u);
+    CHECK(!rig.flag(k_z));
+    CHECK_EQ(rig.cpu->reg(28), k_data + 2); // the byte holding the bit
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(3), 16u); // not found: the length, Z set
+    CHECK(rig.flag(k_z));
+    rig.bus->write_byte(k_data, 0xFF);
+    rig.bus->write_byte(k_data + 1, 0x0F);
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(4), 12u); // first 0 bit
+    CHECK(!rig.flag(k_z));
+    CHECK(!rig.cpu->is_halted());
+}
+
+TEST_CASE(v60_bit_string_moves_up_and_down)
+{
+    // MOVBSU / MOVBSD 0[R1], #12, 4[R3]: bits 0-11 of the source to bits
+    // 4-15 of the destination; the other destination bits are kept.
+    for (uint8_t sub : {uint8_t{0x08}, uint8_t{0x09}}) {
+        StackRig rig;
+        rig.cpu->set_reg(1, k_data);
+        rig.cpu->set_reg(3, k_data + 0x10);
+        rig.bus->write_byte(k_data, 0xBC);
+        rig.bus->write_byte(k_data + 1, 0xFA); // only the low nibble (0xA) is in range
+        rig.bus->write_byte(k_data + 0x10, 0x0F);
+        rig.bus->write_byte(k_data + 0x11, 0x00);
+        rig.bus->write_byte(k_data + 0x12, 0xFF);
+        rig.load({0x5B, sub, 0x01, 0x00, 0x0C, 0x03, 0x04});
+        rig.step();
+        CHECK_EQ(rig.bus->read_byte(k_data + 0x10), 0xCFu);
+        CHECK_EQ(rig.bus->read_byte(k_data + 0x11), 0xABu);
+        CHECK_EQ(rig.bus->read_byte(k_data + 0x12), 0xFFu);
+        CHECK(!rig.cpu->is_halted());
+    }
+}
+
+TEST_CASE(v60_level_triggered_interrupt_line)
+{
+    // The Model 1 interrupt controller holds the line while a level is
+    // pending; the CPU asks it for the vector when it takes the interrupt.
+    StackRig irq;
+    irq.cpu->set_reg(1, k_data);
+    irq.bus->write_long(k_data + (3 + V60::k_irq_vector_base) * 4, k_program + 0x80);
+    irq.load({0x12, 0x01, 0xE5, 0xCD, 0xCD}); // LDPR R1, #5 (SBR); NOP; NOP
+    irq.step();
+    int acknowledged = 0;
+    irq.cpu->set_irq_acknowledge([&acknowledged] { ++acknowledged; return uint8_t{3}; });
+    irq.cpu->set_irq_line(true);
+    irq.step(); // IE clear: not taken
+    CHECK_EQ(acknowledged, 0);
+    irq.cpu->set_psw(irq.cpu->psw() | V60::k_psw_ie);
+    irq.step();
+    CHECK_EQ(acknowledged, 1);
+    CHECK_EQ(irq.cpu->pc(), k_program + 0x80);
+}
+
+// ---------------------------------------------------------------------------
+// MOVD (0x3F): 64-bit move
+// ---------------------------------------------------------------------------
+
+TEST_CASE(v60_movd_moves_64_bits_like_vf)
+{
+    // VF at 0xFE4B37: MOVD /abs, R1 (register pair R1 / R2). Then back to
+    // memory: MOVD R1, /abs + 8. Flags unchanged.
+    StackRig rig;
+    rig.bus->write_long(k_data, 0x11223344);
+    rig.bus->write_long(k_data + 4, 0x55667788);
+    rig.set_flags(V60::k_psw_z);
+    rig.load({0x3F, 0x21, 0xF3, 0x00, 0x00, 0x51, 0x00,   // MOVD /0x510000, R1
+              0x3F, 0x01, 0xF3, 0x08, 0x00, 0x51, 0x00}); // MOVD R1, /0x510008
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(1), 0x11223344u);
+    CHECK_EQ(rig.cpu->reg(2), 0x55667788u);
+    rig.step();
+    CHECK_EQ(rig.mem(k_data + 8), 0x11223344u);
+    CHECK_EQ(rig.mem(k_data + 12), 0x55667788u);
+    CHECK(rig.flag(k_z));
+    CHECK(!rig.cpu->is_halted());
+}
+
+// ---------------------------------------------------------------------------
+// RVBIT / RVBYT, PREPARE / DISPOSE, TASI, GETPSW, RETIU
+// ---------------------------------------------------------------------------
+
+TEST_CASE(v60_reverse_bits_and_bytes)
+{
+    StackRig rig;
+    rig.cpu->set_reg(2, 0xAABBCC00);
+    rig.load({0x08, 0x22, 0xF4, 0x01,                          // RVBIT #0x01, R2
+              0x2C, 0x23, 0xF4, 0x78, 0x56, 0x34, 0x12});      // RVBYT #0x12345678, R3
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(2), 0xAABBCC80u); // only the low byte is written
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(3), 0x78563412u);
+}
+
+TEST_CASE(v60_prepare_and_dispose_stack_frame)
+{
+    StackRig rig;
+    rig.cpu->set_reg(V60::k_reg_fp, 0x00ABCDEF);
+    const uint32_t sp = rig.sp();
+    rig.load({0xDE, 0xF4, 0x10, 0x00, 0x00, 0x00, // PREPARE #16
+              0xCC});                             // DISPOSE
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(V60::k_reg_fp), sp - 4);
+    CHECK_EQ(rig.sp(), sp - 4 - 16);
+    CHECK_EQ(rig.mem(sp - 4), 0x00ABCDEFu); // the old FP
+    rig.step();
+    CHECK_EQ(rig.sp(), sp);
+    CHECK_EQ(rig.cpu->reg(V60::k_reg_fp), 0x00ABCDEFu);
+}
+
+TEST_CASE(v60_tasi_and_getpsw)
+{
+    StackRig rig;
+    rig.cpu->set_reg(4, 0x12345600);
+    rig.cpu->set_reg(5, 0x000000FF);
+    rig.load({0xE1, 0x64,   // TASI R4: was 0, now 0xFF; Z clear
+              0xE1, 0x65,   // TASI R5: was 0xFF; Z set
+              0xF7, 0x63}); // GETPSW R3
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(4), 0x123456FFu);
+    CHECK(!rig.flag(k_z));
+    rig.step();
+    CHECK(rig.flag(k_z));
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(3), rig.cpu->psw());
+    CHECK(!rig.cpu->is_halted());
+}
+
+// ---------------------------------------------------------------------------
+// String compare (CMPC / CMPCS), downward search (SCHCD), decimal group (0x59)
+// ---------------------------------------------------------------------------
+
+namespace {
+void put_string(StackRig& rig, uint32_t address, const char* text)
+{
+    for (uint32_t i = 0; text[i] != 0; ++i) {
+        rig.bus->write_byte(address + i, static_cast<uint8_t>(text[i]));
+    }
+}
+} // namespace
+
+TEST_CASE(v60_string_compare)
+{
+    // CMPC.B [R1], #4, [R2], #4: S = first string greater, Z = equal.
+    for (const auto& [a, b, z, sign] : {std::tuple{"ABCD", "ABCD", true, false},
+                                        std::tuple{"ABCD", "ABCE", false, false},
+                                        std::tuple{"ABDA", "ABCZ", false, true}}) {
+        StackRig rig;
+        rig.cpu->set_reg(1, k_data);
+        rig.cpu->set_reg(2, k_data + 0x10);
+        put_string(rig, k_data, a);
+        put_string(rig, k_data + 0x10, b);
+        rig.load({0x58, 0x00, 0x61, 0x04, 0x62, 0x04});
+        rig.step();
+        CHECK_EQ(rig.flag(k_z), z);
+        CHECK_EQ(rig.flag(k_s), sign);
+        CHECK(!rig.cpu->is_halted());
+    }
+    // CMPCS stops at the R26 character (CY cleared): "AB.x" vs "AB.y" equal up to '.'.
+    StackRig stop;
+    stop.cpu->set_reg(1, k_data);
+    stop.cpu->set_reg(2, k_data + 0x10);
+    stop.cpu->set_reg(26, '.');
+    put_string(stop, k_data, "AB.x");
+    put_string(stop, k_data + 0x10, "AB.y");
+    stop.load({0x58, 0x02, 0x61, 0x04, 0x62, 0x04});
+    stop.step();
+    CHECK(!stop.flag(k_cy));
+    CHECK(!stop.flag(k_s));
+    CHECK_EQ(stop.cpu->reg(28), 4u + 2); // length 1 + index of the stop character
+}
+
+TEST_CASE(v60_string_search_down)
+{
+    // SCHCD.B [R1], #4, #'B': from index 4 down (MAME), first 'B' at 3.
+    StackRig rig;
+    rig.cpu->set_reg(1, k_data);
+    put_string(rig, k_data, "ABCB");
+    rig.load({0x58, 0x19, 0x61, 0x04, 0xF4, 0x42});
+    rig.step();
+    CHECK_EQ(rig.cpu->reg(27), 3u);
+    CHECK_EQ(rig.cpu->reg(28), k_data + 3);
+    CHECK(!rig.flag(k_z));
+    CHECK(!rig.cpu->is_halted());
+}
+
+TEST_CASE(v60_decimal_arithmetic_and_conversion)
+{
+    StackRig rig;
+    rig.cpu->set_reg(1, k_data);
+    rig.cpu->set_reg(2, k_data + 0x10);
+    rig.cpu->set_reg(3, k_data + 0x20);
+    rig.bus->write_byte(k_data, 0x38);
+    rig.load({0x59, 0x00, 0xF4, 0x45, 0x61, 0x00,         // ADDDC #0x45, [R1]: 38 + 45 = 83
+              0x59, 0x00, 0xF4, 0x70, 0x61, 0x00,         // ADDDC #0x70, [R1]: 83 + 70 = 153: 53, CY
+              0x59, 0x01, 0xF4, 0x05, 0x61, 0x00,         // SUBDC #0x05, [R1]: 53 - 5 - 1 = 47
+              0x59, 0x10, 0xF4, 0x47, 0x62, 0x30,         // CVTDPZ #0x47, [R2], #'0': "47"
+              0x59, 0x18, 0xF4, 0x34, 0x37, 0x63, 0x30}); // CVTDZP #"47", [R3]
+    rig.step();
+    CHECK_EQ(rig.bus->read_byte(k_data), 0x83u);
+    CHECK(!rig.flag(k_cy));
+    rig.step();
+    CHECK_EQ(rig.bus->read_byte(k_data), 0x53u);
+    CHECK(rig.flag(k_cy));
+    rig.step();
+    CHECK_EQ(rig.bus->read_byte(k_data), 0x47u);
+    CHECK(!rig.flag(k_cy));
+    rig.step();
+    CHECK_EQ(rig.bus->read_byte(k_data + 0x10), static_cast<uint32_t>('4'));
+    CHECK_EQ(rig.bus->read_byte(k_data + 0x11), static_cast<uint32_t>('7'));
+    rig.step();
+    CHECK_EQ(rig.bus->read_byte(k_data + 0x20), 0x47u);
+    CHECK(!rig.cpu->is_halted());
 }

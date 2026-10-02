@@ -124,8 +124,12 @@ void I8251::tick(uint32_t ticks)
         m_tx_shifting = false;
 
         // Character complete: it arrives at the other end of the line.
+        const auto character = static_cast<uint8_t>(m_tx_shift & m_data_mask);
         if (m_peer != nullptr) {
-            m_peer->receive_character(static_cast<uint8_t>(m_tx_shift & m_data_mask));
+            m_peer->receive_character(character);
+        }
+        if (m_second_peer != nullptr) {
+            m_second_peer->receive_character(character);
         }
         try_start_transmit(); // next byte from the holding buffer, if any
         if (!m_tx_shifting) {

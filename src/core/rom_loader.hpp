@@ -58,6 +58,8 @@ enum class RomRole {
     TgpTables,    // a group; with all of them the real TGP runs, otherwise
     TgpData,      // the high-level Tgp stands in
     PolygonRom,   // 3D model ROM (16 MB of 32-bit words): optional
+    DsbProgram,   // Digital Sound Board Z80 program and MPEG data: optional
+    DsbMpeg,      // as a group; without them there is no music
     NotUsed,      // part of the set, not needed by this emulator yet
 };
 

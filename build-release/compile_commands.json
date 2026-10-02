@@ -1,6 +1,12 @@
 [
 {
   "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp",
+  "output": "CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
   "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.cpp",
   "file": "/Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.cpp",
   "output": "CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o"
@@ -19,6 +25,12 @@
 },
 {
   "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp",
+  "output": "CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
   "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.cpp",
   "file": "/Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.cpp",
   "output": "CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o"
@@ -34,6 +46,12 @@
   "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.cpp",
   "file": "/Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.cpp",
   "output": "CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp",
+  "output": "CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o"
 },
 {
   "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
@@ -124,6 +142,12 @@
   "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1.dir/src/audio/audio_output.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp",
   "file": "/Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp",
   "output": "CMakeFiles/model1.dir/src/audio/audio_output.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp",
+  "output": "CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o"
 },
 {
   "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
@@ -223,6 +247,12 @@
 },
 {
   "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/tests/test_dsb.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/tests/test_dsb.cpp",
+  "output": "CMakeFiles/emulator_tests.dir/tests/test_dsb.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
   "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/host_tests.dir/tests/test_main.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/tests/test_main.cpp",
   "file": "/Users/gv/dev/projects/sega-model1-emu/tests/test_main.cpp",
   "output": "CMakeFiles/host_tests.dir/tests/test_main.cpp.o"
@@ -235,8 +265,26 @@
 },
 {
   "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/tests/test_input_host.cpp",
+  "output": "CMakeFiles/host_tests.dir/tests/test_input_host.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
   "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp",
   "file": "/Users/gv/dev/projects/sega-model1-emu/src/audio/audio_output.cpp",
   "output": "CMakeFiles/host_tests.dir/src/audio/audio_output.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.cpp",
+  "output": "CMakeFiles/host_tests.dir/src/input/gamepad_input.cpp.o"
+},
+{
+  "directory": "/Users/gv/dev/projects/sega-model1-emu/build-release",
+  "command": "/usr/bin/c++ -DMODEL1_TRACE_INPUT=1 -DMODEL1_TRACE_IRQ=0 -DMODEL1_TRACE_TGP=0 -I/Users/gv/dev/projects/sega-model1-emu/src -isystem /opt/homebrew/include -isystem /opt/homebrew/include/SDL2 -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -o CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp",
+  "file": "/Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.cpp",
+  "output": "CMakeFiles/host_tests.dir/src/input/keyboard_input.cpp.o"
 }
 ]

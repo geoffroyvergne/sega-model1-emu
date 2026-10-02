@@ -81,8 +81,48 @@ public:
     //     a self-centring wheel would always fall back to course 1. The
     //     spring starts k_spring_delay_frames after a pedal goes down, so
     //     the wheel holds still while the game reads the confirmation.
-    enum class Profile { VirtuaFighter, VirtuaRacing };
-    static constexpr std::size_t k_analog_channels = 4;
+    //   StarWars (MAME's "swa" ports):
+    //     system  : 0 coin 1, 1 coin 2, 2 test, 3 service, 4 start 1, 5 start 2
+    //     player 1: 0 P1 trigger, 1 P1 button 2, 2 P2 trigger, 3 P2 button 2,
+    //               4 P1 button 3
+    //     analog  : 0 stick 1 X (227 left, 27 right), 1 stick 1 Y (27 up,
+    //               227 down), 2 throttle (200 idle, 28 full), 4 / 5 stick 2
+    //               X / Y; 0x7F centre. Channels 4-7 are read with port A
+    //               bit 0 set (the same switch that selects the DIP switches).
+    //     The keyboard sticks self-centre; the throttle is a lever that
+    //     stays where it is left (P1 buttons 5 / 6 open / close it).
+    enum class Profile { VirtuaFighter, VirtuaRacing, StarWars };
+    static constexpr std::size_t k_analog_channels = 8;
+    static constexpr uint8_t k_stick_centre = 0x7F;
+    static constexpr uint8_t k_stick_min = 27;
+    static constexpr uint8_t k_stick_max = 227;
+    static constexpr int k_stick_step = 0x10;
+    static constexpr uint8_t k_throttle_idle = 200;
+    static constexpr uint8_t k_throttle_full = 28;
+    static constexpr int k_throttle_step = 4;
+
+    // Analog host controls (game controller sticks and triggers), on top of
+    // the keys. Sticks run -1 (left / up) .. +1 (right / down), pedals
+    // (triggers) 0 .. 1; set_axis() applies the dead zones. How each game
+    // uses them:
+    //   VirtuaRacing  Stick1X steers. While racing (a pedal held, as for
+    //                 the keys) the wheel follows the stick directly; in
+    //                 menus a stick pushed past halfway acts like the arrow
+    //                 keys (the wheel moves slowly and stays), so a course
+    //                 stays selected when the stick is let go.
+    //                 Pedal1 / Pedal2: accelerator / brake, proportional.
+    //   StarWars      Stick1 / Stick2: the pilot's / gunner's flight sticks,
+    //                 proportional over MAME's range. Pedal1 / Pedal2 move
+    //                 the throttle lever toward fast / slow, faster the
+    //                 harder they are pressed; it stays where it is left.
+    //   VirtuaFighter none (the host turns sticks into joystick directions).
+    // A centred stick or released pedal leaves the keys in control.
+    enum class Axis { Stick1X, Stick1Y, Stick2X, Stick2Y, Pedal1, Pedal2, Count };
+    static constexpr std::size_t k_axis_count = static_cast<std::size_t>(Axis::Count);
+    static constexpr float k_stick_dead_zone = 0.15f;
+    static constexpr float k_pedal_dead_zone = 0.05f;
+    static constexpr float k_pedal_held = 0.25f;  // VR: a pedal counts as held (racing) past this
+    static constexpr float k_menu_steer = 0.5f;   // VR menus: stick deflection that acts as a key
     static constexpr uint8_t k_wheel_centre = 0x80;
     static constexpr uint8_t k_wheel_left = 0x00;
     static constexpr uint8_t k_wheel_right = 0xFF;
@@ -103,6 +143,11 @@ public:
     static constexpr uint32_t k_unused_last = 0x0E;
     static constexpr uint32_t k_lamp_index = 0x0F;
     static constexpr uint32_t k_command_index = 0x20;
+    // Board status byte next to the command byte: 0x40 = ready (MAME's old
+    // high-level driver returned 0x40 for 0xC00042). Virtua Fighter waits
+    // for it at boot.
+    static constexpr uint32_t k_status_index = 0x21;
+    static constexpr uint8_t k_status_ready = 0x40;
 
     explicit InputManager(DualPortRam& shared_ram);
 
@@ -115,13 +160,18 @@ public:
     void set_profile(Profile profile);
     [[nodiscard]] Profile profile() const { return m_profile; }
 
-    // Analog channel value (ADC channels 0-3), and the once-per-frame
+    // Analog channel value (channels 0-7; 4-7 are 0xFF unless wired), and the once-per-frame
     // update that moves the wheel and pedals toward their held positions.
     [[nodiscard]] uint8_t analog(std::size_t channel) const { return m_analog[channel % k_analog_channels]; }
     void update_analog();
 
     // Records a press (true) or release (false) of one input.
     void set_input(Input input, bool pressed);
+
+    // Sets an analog host control (see Axis); takes effect at the next
+    // update_analog(). Values outside the range are clamped.
+    void set_axis(Axis axis, float value);
+    [[nodiscard]] float axis_value(Axis axis) const { return m_axes[static_cast<std::size_t>(axis)]; }
 
     // Current active-low value of a port.
     [[nodiscard]] uint16_t port_value(Port port) const;
@@ -160,6 +210,10 @@ private:
     Profile m_profile = Profile::VirtuaFighter;
     std::array<uint8_t, k_analog_channels> m_analog{};
     bool m_steer_left = false, m_steer_right = false, m_accelerate = false, m_brake = false;
+    bool m_p2_left = false, m_p2_right = false, m_p2_up = false, m_p2_down = false;
+    bool m_throttle_up = false, m_throttle_down = false;
+    std::array<float, k_axis_count> m_axes{};         // after the dead zones
+    std::array<uint8_t, 2> m_key_pedals{};            // VR: accelerator / brake as the keys move them
     int m_pedal_frames = 0; // consecutive frames with a pedal key held
 };
 

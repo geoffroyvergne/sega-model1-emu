@@ -74,6 +74,10 @@ void Bus::reset()
             std::fill_n(region.data, region.size, uint8_t{0});
         }
     }
+    // Work RAM A is battery-backed; with no saved contents it starts with
+    // every bit set, as MAME's NVRAM default (Virtua Fighter's rankings
+    // initialise only from that state).
+    m_ram_a.fill(0xFF);
 }
 
 bool Bus::is_work_ram(uint32_t address, uint32_t size) const
@@ -112,8 +116,10 @@ uint32_t Bus::io_space_read(uint32_t address, uint32_t size)
     };
     IoMapping* io = find(address);
     if (io == nullptr || !io->read || (size > 1 && (address & 1) != 0)) {
-        std::cerr << "[Bus] CRITICAL: unmapped I/O-space read" << (size * 8) << " at " << Hex{address}
-                  << ", returning 0\n";
+        if (m_logged_io_space_reads.insert(address).second) {
+            std::cerr << "[Bus] CRITICAL: unmapped I/O-space read" << (size * 8) << " at " << Hex{address}
+                      << ", returning 0 (logged once per address)\n";
+        }
         return 0;
     }
     if (size == 1) {
@@ -144,8 +150,10 @@ void Bus::io_space_write(uint32_t address, uint32_t size, uint32_t value)
     const bool usable = io != nullptr
         && (size == 1 ? static_cast<bool>(io->write_byte) : (static_cast<bool>(io->write) && (address & 1) == 0));
     if (!usable) {
-        std::cerr << "[Bus] CRITICAL: unmapped I/O-space write" << (size * 8) << " at " << Hex{address}
-                  << " (value " << Hex{value} << "), ignored\n";
+        if (m_logged_io_space_writes.insert(address).second) {
+            std::cerr << "[Bus] CRITICAL: unmapped I/O-space write" << (size * 8) << " at " << Hex{address}
+                      << " (value " << Hex{value} << "), ignored (logged once per address)\n";
+        }
         return;
     }
     if (size == 1) {
@@ -205,16 +213,22 @@ void Bus::log_system_register_write(uint32_t address, uint32_t size, uint32_t va
     }
 }
 
+// Each unmapped address is logged once per direction: games that poll one
+// (Virtua Fighter reads 0xC40004 every frame) would flood the log otherwise.
 void Bus::log_unmapped_read(uint32_t address, uint32_t size)
 {
-    std::cerr << "[Bus] CRITICAL: unmapped read" << (size * 8) << " at "
-              << Hex{address} << ", returning 0\n";
+    if (m_logged_unmapped_reads.insert(address).second) {
+        std::cerr << "[Bus] CRITICAL: unmapped read" << (size * 8) << " at "
+                  << Hex{address} << ", returning 0 (logged once per address)\n";
+    }
 }
 
 void Bus::log_unmapped_write(uint32_t address, uint32_t size, uint32_t value)
 {
-    std::cerr << "[Bus] CRITICAL: unmapped write" << (size * 8) << " at "
-              << Hex{address} << " (value " << Hex{value} << "), ignored\n";
+    if (m_logged_unmapped_writes.insert(address).second) {
+        std::cerr << "[Bus] CRITICAL: unmapped write" << (size * 8) << " at "
+                  << Hex{address} << " (value " << Hex{value} << "), ignored (logged once per address)\n";
+    }
 }
 
 // ---------------------------------------------------------------------------

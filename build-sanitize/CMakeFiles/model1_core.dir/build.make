@@ -72,10 +72,24 @@ include CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/codegen:
 .PHONY : CMakeFiles/model1_core.dir/codegen
 
+CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o: CMakeFiles/model1_core.dir/flags.make
+CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp
+CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o -MF CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o.d -o CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp
+
+CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp > CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.i
+
+CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.cpp -o CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.s
+
 CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.cpp
 CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o -MF CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o.d -o CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.cpp
 
 CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.i: cmake_force
@@ -89,7 +103,7 @@ CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.cpp
 CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o -MF CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o.d -o CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.cpp
 
 CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.i: cmake_force
@@ -103,7 +117,7 @@ CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/bus.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/bus.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/bus.cpp
 CMakeFiles/model1_core.dir/src/core/bus.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/model1_core.dir/src/core/bus.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/model1_core.dir/src/core/bus.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/bus.cpp.o -MF CMakeFiles/model1_core.dir/src/core/bus.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/bus.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/bus.cpp
 
 CMakeFiles/model1_core.dir/src/core/bus.cpp.i: cmake_force
@@ -114,10 +128,24 @@ CMakeFiles/model1_core.dir/src/core/bus.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model1_core.dir/src/core/bus.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/core/bus.cpp -o CMakeFiles/model1_core.dir/src/core/bus.cpp.s
 
+CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o: CMakeFiles/model1_core.dir/flags.make
+CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp
+CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o -MF CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp
+
+CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp > CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.i
+
+CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.cpp -o CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.s
+
 CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.cpp
 CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o -MF CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.cpp
 
 CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.i: cmake_force
@@ -131,7 +159,7 @@ CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/i8251.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/i8251.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.cpp
 CMakeFiles/model1_core.dir/src/core/i8251.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/model1_core.dir/src/core/i8251.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/model1_core.dir/src/core/i8251.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/i8251.cpp.o -MF CMakeFiles/model1_core.dir/src/core/i8251.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/i8251.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.cpp
 
 CMakeFiles/model1_core.dir/src/core/i8251.cpp.i: cmake_force
@@ -145,7 +173,7 @@ CMakeFiles/model1_core.dir/src/core/i8251.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.cpp
 CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o -MF CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.cpp
 
 CMakeFiles/model1_core.dir/src/core/input_manager.cpp.i: cmake_force
@@ -156,10 +184,24 @@ CMakeFiles/model1_core.dir/src/core/input_manager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model1_core.dir/src/core/input_manager.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.cpp -o CMakeFiles/model1_core.dir/src/core/input_manager.cpp.s
 
+CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o: CMakeFiles/model1_core.dir/flags.make
+CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp
+CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o -MF CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp
+
+CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp > CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.i
+
+CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.cpp -o CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.s
+
 CMakeFiles/model1_core.dir/src/core/io_board.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/io_board.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/io_board.cpp
 CMakeFiles/model1_core.dir/src/core/io_board.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/model1_core.dir/src/core/io_board.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/model1_core.dir/src/core/io_board.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/io_board.cpp.o -MF CMakeFiles/model1_core.dir/src/core/io_board.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/io_board.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/io_board.cpp
 
 CMakeFiles/model1_core.dir/src/core/io_board.cpp.i: cmake_force
@@ -173,7 +215,7 @@ CMakeFiles/model1_core.dir/src/core/io_board.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/m68000.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/m68000.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.cpp
 CMakeFiles/model1_core.dir/src/core/m68000.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/model1_core.dir/src/core/m68000.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/model1_core.dir/src/core/m68000.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/m68000.cpp.o -MF CMakeFiles/model1_core.dir/src/core/m68000.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/m68000.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.cpp
 
 CMakeFiles/model1_core.dir/src/core/m68000.cpp.i: cmake_force
@@ -187,7 +229,7 @@ CMakeFiles/model1_core.dir/src/core/m68000.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/mb86233.cpp
 CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o -MF CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/mb86233.cpp
 
 CMakeFiles/model1_core.dir/src/core/mb86233.cpp.i: cmake_force
@@ -201,7 +243,7 @@ CMakeFiles/model1_core.dir/src/core/mb86233.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/motherboard.cpp
 CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o -MF CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/motherboard.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/motherboard.cpp
 
 CMakeFiles/model1_core.dir/src/core/motherboard.cpp.i: cmake_force
@@ -215,7 +257,7 @@ CMakeFiles/model1_core.dir/src/core/motherboard.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.cpp
 CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o -MF CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.cpp
 
 CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.i: cmake_force
@@ -229,7 +271,7 @@ CMakeFiles/model1_core.dir/src/core/polygon_renderer.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/rom_loader.cpp
 CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o -MF CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/rom_loader.cpp
 
 CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.i: cmake_force
@@ -243,7 +285,7 @@ CMakeFiles/model1_core.dir/src/core/rom_loader.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.cpp
 CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o -MF CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/sound_board.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.cpp
 
 CMakeFiles/model1_core.dir/src/core/sound_board.cpp.i: cmake_force
@@ -257,7 +299,7 @@ CMakeFiles/model1_core.dir/src/core/sound_board.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.cpp
 CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o -MF CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.cpp
 
 CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.i: cmake_force
@@ -271,7 +313,7 @@ CMakeFiles/model1_core.dir/src/core/sound_bus.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/tgp.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/tgp.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.cpp
 CMakeFiles/model1_core.dir/src/core/tgp.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/model1_core.dir/src/core/tgp.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/model1_core.dir/src/core/tgp.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/tgp.cpp.o -MF CMakeFiles/model1_core.dir/src/core/tgp.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/tgp.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.cpp
 
 CMakeFiles/model1_core.dir/src/core/tgp.cpp.i: cmake_force
@@ -285,7 +327,7 @@ CMakeFiles/model1_core.dir/src/core/tgp.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.cpp
 CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o -MF CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.cpp
 
 CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.i: cmake_force
@@ -299,7 +341,7 @@ CMakeFiles/model1_core.dir/src/core/tgp_copro.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.cpp
 CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o -MF CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.cpp
 
 CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.i: cmake_force
@@ -313,7 +355,7 @@ CMakeFiles/model1_core.dir/src/core/tilemap_renderer.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/v60.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/v60.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/v60.cpp
 CMakeFiles/model1_core.dir/src/core/v60.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/model1_core.dir/src/core/v60.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/model1_core.dir/src/core/v60.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/v60.cpp.o -MF CMakeFiles/model1_core.dir/src/core/v60.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/v60.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/v60.cpp
 
 CMakeFiles/model1_core.dir/src/core/v60.cpp.i: cmake_force
@@ -327,7 +369,7 @@ CMakeFiles/model1_core.dir/src/core/v60.cpp.s: cmake_force
 CMakeFiles/model1_core.dir/src/core/z80.cpp.o: CMakeFiles/model1_core.dir/flags.make
 CMakeFiles/model1_core.dir/src/core/z80.cpp.o: /Users/gv/dev/projects/sega-model1-emu/src/core/z80.cpp
 CMakeFiles/model1_core.dir/src/core/z80.cpp.o: CMakeFiles/model1_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/model1_core.dir/src/core/z80.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/model1_core.dir/src/core/z80.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/model1_core.dir/src/core/z80.cpp.o -MF CMakeFiles/model1_core.dir/src/core/z80.cpp.o.d -o CMakeFiles/model1_core.dir/src/core/z80.cpp.o -c /Users/gv/dev/projects/sega-model1-emu/src/core/z80.cpp
 
 CMakeFiles/model1_core.dir/src/core/z80.cpp.i: cmake_force
@@ -340,12 +382,15 @@ CMakeFiles/model1_core.dir/src/core/z80.cpp.s: cmake_force
 
 # Object files for target model1_core
 model1_core_OBJECTS = \
+"CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o" \
 "CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o" \
 "CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/bus.cpp.o" \
+"CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/i8251.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o" \
+"CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/io_board.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/m68000.cpp.o" \
 "CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o" \
@@ -363,12 +408,15 @@ model1_core_OBJECTS = \
 # External object files for target model1_core
 model1_core_EXTERNAL_OBJECTS =
 
+libmodel1_core.a: CMakeFiles/model1_core.dir/src/audio/mp2_decoder.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/audio/multipcm.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/audio/ym3438.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/bus.cpp.o
+libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/digital_sound_board.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/eeprom_93c46.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/i8251.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/input_manager.cpp.o
+libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/interrupt_controller.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/io_board.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/m68000.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/mb86233.cpp.o
@@ -384,7 +432,7 @@ libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/v60.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/src/core/z80.cpp.o
 libmodel1_core.a: CMakeFiles/model1_core.dir/build.make
 libmodel1_core.a: CMakeFiles/model1_core.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Linking CXX static library libmodel1_core.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/gv/dev/projects/sega-model1-emu/build-sanitize/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Linking CXX static library libmodel1_core.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/model1_core.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/model1_core.dir/link.txt --verbose=$(VERBOSE)
 

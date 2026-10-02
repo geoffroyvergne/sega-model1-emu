@@ -17,6 +17,7 @@ Motherboard::Motherboard()
     , m_io_shared_ram(std::make_unique<DualPortRam>())
     , m_inputs(std::make_unique<InputManager>(*m_io_shared_ram))
     , m_io_board(std::make_unique<IoBoard>(*m_io_shared_ram, *m_inputs))
+    , m_dsb(std::make_unique<DigitalSoundBoard>(SoundBoard::k_audio_rate_hz))
     , m_tilemaps(std::make_unique<TilemapRenderer>())
     , m_polygons(std::make_unique<PolygonRenderer>())
     , m_sound_uart(std::make_unique<I8251>("UART main"))
@@ -98,8 +99,48 @@ Motherboard::Motherboard()
             bus.set_data_bank((value >> 4) & 0x7);
         }
     };
-    m_bus->map_io("data ROM bank", k_bank_register_port, 2, 0x1, nullptr, bank_write,
+    // Interrupt controller (see InterruptController): control at 0xE00000
+    // (write-only), mask at 0xE00002; byte registers on the low lane.
+    m_bus->map_io("interrupt control", 0xE00000, 2, 0x1, [](uint32_t) { return uint16_t{0}; },
+        [this](uint32_t offset, uint16_t value) {
+            if (offset == 0) {
+                m_interrupts.write_control(static_cast<uint8_t>(value));
+                update_irq_line();
+            }
+        },
+        [this](uint32_t offset, uint8_t value) {
+            if (offset == 0) {
+                m_interrupts.write_control(value);
+                update_irq_line();
+            }
+        });
+    auto write_mask = [this](uint8_t value) {
+        m_interrupts.write_mask(value);
+        check_uart_interrupt(true);
+    };
+    m_bus->map_io("interrupt mask", 0xE00002, 2, 0x1, [this](uint32_t) { return uint16_t{m_interrupts.mask()}; },
+        [write_mask](uint32_t offset, uint16_t value) {
+            if (offset == 0) {
+                write_mask(static_cast<uint8_t>(value));
+            }
+        },
+        [write_mask](uint32_t offset, uint8_t value) {
+            if (offset == 0) {
+                write_mask(value);
+            }
+        });
+    m_cpu->set_irq_acknowledge([this] { return m_interrupts.acknowledge(); });
+
+    // Write-only: reads return 0 (MAME's value for an unmapped read). Virtua
+    // Fighter reads it.
+    m_bus->map_io("data ROM bank", k_bank_register_port, 2, 0x1, [](uint32_t) { return uint16_t{0}; }, bank_write,
         [bank_write](uint32_t offset, uint8_t value) { bank_write(offset, value); });
+
+    // GLUE timers (see GlueTimers), level 0.
+    m_bus->map_io("GLUE timers", GlueTimers::k_base, GlueTimers::k_size, 0xF,
+        [this](uint32_t offset) { return m_timers.read(offset); },
+        [this](uint32_t offset, uint16_t value) { m_timers.write(offset, value); },
+        [this](uint32_t offset, uint8_t value) { m_timers.write_byte(offset, value); });
 
     // Video sync registers: written by games, no effect emulated (as in MAME).
     for (uint32_t base : {0x720000u, 0x740000u, 0x760000u, 0x770000u}) {
@@ -176,9 +217,21 @@ void Motherboard::reset()
     m_inputs->set_publishing(!m_io_board->has_firmware());
     m_inputs->reset();
     m_io_board->reset();
+    // Digital Sound Board (when loaded): it listens to the sound board's
+    // UART output and its music joins the sound board's mix.
+    m_dsb->reset();
+    m_dsb_quarters = 0;
+    if (m_dsb->present()) {
+        m_sound->uart().add_second_receiver(m_dsb->uart());
+        m_sound->set_music_source([this](std::span<int16_t> out) { m_dsb->render(out); });
+    }
     m_io_quarters = 0;
     m_polygons->reset();
     m_sound_uart->reset();
+    m_interrupts.reset();
+    m_timers.reset();
+    m_uart_tx_ready = m_uart_rx_ready = false;
+    m_cpu->set_irq_line(false);
     m_sound->reset();
     m_main_cycles = 0;
     m_sound_eighths = 0;
@@ -222,11 +275,14 @@ void Motherboard::run_frame()
     m_tilemaps->render_background(m_bus->tile_ram(), m_bus->char_ram(), m_bus->palette_ram(), m_frame);
     m_polygons->render(m_bus->display_list_ram(), m_bus->palette_ram(), m_bus->color_xlat_ram(), m_frame);
     m_tilemaps->render_foreground(m_bus->tile_ram(), m_bus->char_ram(), m_bus->palette_ram(), m_frame);
+    m_polygons->render(m_bus->display_list_ram(), m_bus->palette_ram(), m_bus->color_xlat_ram(), m_frame,
+                       PolygonRenderer::Pass::AboveHud);
     m_polygons->end_frame();
 
     // End of frame: the board's interrupt controller raises VBlank. The CPU
     // takes it before its next instruction if PSW.IE allows.
-    m_cpu->request_interrupt(k_vblank_irq_level);
+    m_interrupts.raise(InterruptController::k_level_vblank);
+    update_irq_line();
     ++m_frame_count;
 }
 
@@ -240,6 +296,15 @@ void Motherboard::run_peripherals(uint32_t main_cycles)
     m_uart_remainder %= 32;
     m_sound_uart->tick(uart_ticks);
     m_sound->uart().tick(uart_ticks);
+    if (m_dsb->present()) {
+        m_dsb->uart().tick(uart_ticks); // same 500 kHz serial clock
+    }
+    check_uart_interrupt(false);
+
+    if (m_timers.run(main_cycles) != 0) {
+        m_interrupts.raise(InterruptController::k_level_timer);
+        update_irq_line();
+    }
 
     // Sound CPU: 5/8 of a cycle per V60 cycle. Overshoot is carried, so the
     // long-run ratio is exact.
@@ -253,6 +318,14 @@ void Motherboard::run_peripherals(uint32_t main_cycles)
         m_io_quarters += static_cast<int64_t>(main_cycles);
         while (m_io_quarters > 0) {
             m_io_quarters -= static_cast<int64_t>(m_io_board->step()) * 4;
+        }
+    }
+
+    // Digital Sound Board Z80 (4 MHz), likewise.
+    if (m_dsb->present()) {
+        m_dsb_quarters += static_cast<int64_t>(main_cycles);
+        while (m_dsb_quarters > 0) {
+            m_dsb_quarters -= static_cast<int64_t>(m_dsb->step()) * 4;
         }
     }
 
@@ -700,6 +773,24 @@ void Motherboard::update_sound_demo(uint64_t frame)
     bus.write_byte(SoundBus::k_pcm1_base + 3, 0); // slot 0
     bus.write_byte(SoundBus::k_pcm1_base + 5, 4); // key register
     bus.write_byte(SoundBus::k_pcm1_base + 1, phase == 0 ? 0x80 : 0x00);
+}
+
+void Motherboard::update_irq_line()
+{
+    m_cpu->set_irq_line(m_interrupts.line());
+}
+
+void Motherboard::check_uart_interrupt(bool force)
+{
+    const bool tx_ready = m_sound_uart->tx_ready();
+    const bool rx_ready = m_sound_uart->rx_ready();
+    const bool changed = tx_ready != m_uart_tx_ready || rx_ready != m_uart_rx_ready;
+    m_uart_tx_ready = tx_ready;
+    m_uart_rx_ready = rx_ready;
+    if ((changed || force) && (tx_ready || rx_ready)) {
+        m_interrupts.raise(InterruptController::k_level_uart);
+        update_irq_line();
+    }
 }
 
 } // namespace model1

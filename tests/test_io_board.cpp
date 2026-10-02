@@ -97,6 +97,7 @@ TEST_CASE(io_inputs_published_into_shared_ram)
     CHECK_EQ(bus.read_word(0xC00010), 0x00FFu); // system port idle (active low)
     CHECK_EQ(bus.read_word(0xC00012), 0x00FFu);
     CHECK_EQ(bus.read_word(0xC00016), 0x00FFu); // unused digital port
+    CHECK_EQ(bus.read_byte(0xC00042), 0x40u);  // board status: ready (Virtua Fighter waits for it)
 
     inputs.set_input(InputManager::Input::Coin1, true);
     inputs.set_input(InputManager::Input::P1Left, true);
@@ -389,13 +390,87 @@ TEST_CASE(io_board_io_controller_reaches_shared_ram_and_adc)
     CHECK_EQ(b.read(0x8001), 0xFFu);
 
     rig.inputs->set_profile(InputManager::Profile::VirtuaRacing);
-    // ADC: select channel 0 (wheel, 0x80), then read 8 bits on D0, MSB first.
-    b.write(0xC000, 0);
-    uint8_t value = 0;
-    for (int i = 0; i < 8; ++i) {
-        value = static_cast<uint8_t>((value << 1) | (b.read(0xC000) & 1));
-    }
-    CHECK_EQ(value, 0x80u);
+    // ADC: select channel 0, then read 8 bits on D0, MSB first. Port A bit 0
+    // also switches the ADC to channels 4-7 (unwired on VR: 0xFF).
+    auto adc = [&b](uint16_t channel) {
+        b.write(static_cast<uint16_t>(0xC000 + channel), 0);
+        uint8_t value = 0;
+        for (int i = 0; i < 8; ++i) {
+            value = static_cast<uint8_t>((value << 1) | (b.read(0xC000) & 1));
+        }
+        return value;
+    };
+    CHECK_EQ(adc(0), 0xFFu);
+    b.write(0x8000, 0x00);
+    CHECK_EQ(adc(0), 0x80u); // wheel centre
+
+    // Star Wars: the second stick is on channels 4 and 5.
+    rig.inputs->set_profile(InputManager::Profile::StarWars);
+    rig.inputs->set_input(InputManager::Input::P2Left, true);
+    for (int f = 0; f < 20; ++f) rig.inputs->update_analog();
+    CHECK_EQ(adc(0), 0x7Fu);
+    CHECK_EQ(adc(2), 200u); // throttle idle
+    b.write(0x8000, 0x01);
+    CHECK_EQ(adc(0), 227u); // stick 2 X, reversed: left is high
+    CHECK_EQ(adc(1), 0x7Fu);
+    CHECK_EQ(adc(2), 0xFFu);
+}
+
+TEST_CASE(io_inputs_star_wars_sticks_throttle_and_buttons)
+{
+    DualPortRam ram;
+    InputManager inputs(ram);
+    inputs.set_profile(InputManager::Profile::StarWars);
+    using In = InputManager::Input;
+    auto frames = [&inputs](int n) { for (int i = 0; i < n; ++i) inputs.update_analog(); };
+
+    // Stand-in: all eight channels published, sticks centred, throttle idle.
+    CHECK_EQ(ram.main_read(0), 0x7Fu);
+    CHECK_EQ(ram.main_read(2), 200u);
+    CHECK_EQ(ram.main_read(4), 0x7Fu);
+    CHECK_EQ(ram.main_read(6), 0xFFu);
+
+    // Stick 1: X reversed (left high), Y up low; self-centring.
+    inputs.set_input(In::P1Left, true);
+    inputs.set_input(In::P1Up, true);
+    frames(20);
+    CHECK_EQ(inputs.analog(0), 227u);
+    CHECK_EQ(inputs.analog(1), 27u);
+    inputs.set_input(In::P1Left, false);
+    inputs.set_input(In::P1Up, false);
+    frames(20);
+    CHECK_EQ(inputs.analog(0), 0x7Fu);
+    CHECK_EQ(inputs.analog(1), 0x7Fu);
+    CHECK_EQ(inputs.port_value(InputManager::Port::Player1), 0xFFFFu); // the stick is analog only
+
+    // Stick 2 on channels 4 / 5.
+    inputs.set_input(In::P2Right, true);
+    inputs.set_input(In::P2Down, true);
+    frames(20);
+    CHECK_EQ(ram.main_read(4), 27u);
+    CHECK_EQ(ram.main_read(5), 227u);
+
+    // Throttle: a lever that stays where it is left.
+    inputs.set_input(In::P1Button5, true);
+    frames(10);
+    inputs.set_input(In::P1Button5, false);
+    frames(10);
+    CHECK_EQ(inputs.analog(2), 160u);
+    inputs.set_input(In::P1Button5, true);
+    frames(100);
+    CHECK_EQ(inputs.analog(2), 28u);
+    inputs.set_input(In::P1Button5, false);
+    inputs.set_input(In::P1Button6, true);
+    frames(100);
+    CHECK_EQ(inputs.analog(2), 200u);
+
+    // Buttons all on the player 1 port (MAME's IN.1).
+    inputs.set_input(In::P1Button1, true);
+    inputs.set_input(In::P2Button2, true);
+    inputs.set_input(In::P1Button3, true);
+    CHECK_EQ(inputs.port_value(InputManager::Port::Player1) & 0xFFu, 0xE6u);
+    inputs.set_input(In::Start2, true);
+    CHECK_EQ(inputs.port_value(InputManager::Port::System) & 0xFFu, 0xDFu);
 }
 
 TEST_CASE(io_board_firmware_copies_inputs_into_shared_ram)

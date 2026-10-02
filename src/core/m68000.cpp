@@ -496,6 +496,20 @@ uint32_t M68000::execute_instruction(uint16_t opcode)
         set_nz(value, size);
         return 4 + ea_cycles(ea_mode, ea_reg, size == Size::Long);
     }
+    if ((opcode & 0xFB80) == 0x4880 && ea_mode >= 2) { // MOVEM (EXT when the mode is Dn)
+        return execute_movem(opcode);
+    }
+    if ((opcode & 0xFFB8) == 0x4880) { // EXT.W Dn (byte -> word) / EXT.L Dn (word -> long): N Z, V C cleared
+        uint32_t& dn = m_d[opcode & 7];
+        if ((opcode & 0x40) == 0) {
+            dn = (dn & 0xFFFF0000u) | (static_cast<uint32_t>(static_cast<int16_t>(static_cast<int8_t>(dn))) & 0xFFFFu);
+            set_nz(dn, Size::Word);
+        } else {
+            dn = static_cast<uint32_t>(static_cast<int32_t>(static_cast<int16_t>(dn)));
+            set_nz(dn, Size::Long);
+        }
+        return 4;
+    }
     if ((opcode & 0xFFF8) == 0x4840) { // SWAP Dn: exchange the 16-bit halves
         uint32_t& dn = m_d[opcode & 7];
         dn = (dn >> 16) | (dn << 16);
@@ -531,6 +545,53 @@ uint32_t M68000::execute_instruction(uint16_t opcode)
         }
         write_ea(target, size, 0);
         m_sr = static_cast<uint16_t>((m_sr & ~(k_sr_negative | k_sr_overflow | k_sr_carry)) | k_sr_zero);
+        if (target.kind == Ea::Kind::DataReg) {
+            return size == Size::Long ? 6 : 4;
+        }
+        return (size == Size::Long ? 12 : 8) + ea_cycles(ea_mode, ea_reg, size == Size::Long);
+    }
+    // NEGX (0x40), NEG (0x44), NOT (0x46) .B/.W/.L <ea> (data alterable).
+    //   NOT:  ~dst; N Z set, V C cleared, X unchanged.
+    //   NEG:  0 - dst; flags as a subtraction, X = C.
+    //   NEGX: 0 - dst - X; as NEG, but Z is only cleared (never set), so a
+    //         multi-precision negation keeps Z for the whole value.
+    // Cycles as CLR: 4 / 6 (long) on a register, 8 / 12 + ea in memory.
+    if (((opcode & 0xFF00) == 0x4000 || (opcode & 0xFF00) == 0x4400 || (opcode & 0xFF00) == 0x4600)
+        && (opcode & 0xC0) != 0xC0) {
+        const Size size = (opcode & 0xC0) == 0x00 ? Size::Byte : ((opcode & 0xC0) == 0x40 ? Size::Word : Size::Long);
+        const Ea target = decode_ea(ea_mode, ea_reg, size);
+        if (target.kind == Ea::Kind::Invalid || target.kind == Ea::Kind::AddrReg || target.kind == Ea::Kind::Immediate
+            || (ea_mode == 7 && ea_reg >= 2) || !check_alignment(target, size)) {
+            if (!m_halted) {
+                halt("invalid addressing mode", opcode);
+            }
+            return k_idle_cycles;
+        }
+        const uint32_t mask = size_mask(size);
+        const uint32_t sign = 1u << (size_bytes(size) * 8 - 1);
+        const uint32_t value = read_ea(target, size) & mask;
+        uint32_t result = 0;
+        switch (opcode & 0xFF00) {
+        case 0x4600: // NOT
+            result = ~value & mask;
+            set_nz(result, size);
+            break;
+        case 0x4400: // NEG
+            result = add_sub_flags(0, value, true, size, true);
+            break;
+        default: { // NEGX
+            const uint32_t x = (m_sr & k_sr_extend) != 0 ? 1 : 0;
+            result = (0u - value - x) & mask;
+            const bool borrow = value != 0 || x != 0;
+            const bool overflow = (value & result & sign) != 0;
+            const bool keep_zero = result == 0 && (m_sr & k_sr_zero) != 0;
+            m_sr = static_cast<uint16_t>(m_sr & ~(k_sr_negative | k_sr_zero | k_sr_overflow | k_sr_carry | k_sr_extend));
+            m_sr = static_cast<uint16_t>(m_sr | ((result & sign) != 0 ? k_sr_negative : 0) | (keep_zero ? k_sr_zero : 0)
+                                         | (overflow ? k_sr_overflow : 0) | (borrow ? k_sr_carry | k_sr_extend : 0));
+            break;
+        }
+        }
+        write_ea(target, size, result);
         if (target.kind == Ea::Kind::DataReg) {
             return size == Size::Long ? 6 : 4;
         }
@@ -1223,6 +1284,91 @@ uint32_t M68000::execute_bit_operation(uint16_t opcode, bool static_form)
     }
     const uint32_t base = kind == k_btst ? 4 : 8;
     return base + (static_form ? 4 : 0) + ea_cycles(ea_mode, ea_reg, false);
+}
+
+// MOVEM.W/L <list>, <ea> (bit 10 = 0) or <ea>, <list> (bit 10 = 1): the
+// extension word selects registers, bit 0 = D0 ... bit 15 = A7, except with
+// -(An), where the order is reversed (bit 0 = A7) and registers are stored
+// from A7 down to D0. Word loads are sign-extended into the whole register.
+// (An)+ / -(An) leave An at the final address; with -(An) the value stored
+// for An itself is its initial value. Flags are not affected.
+// Cycles (MC68000 manual): register to memory 8 / 8 / 12 / 14 / 12 / 16 for
+// (An) / -(An) / d16(An) / d8(An,Xn) / abs.W / abs.L; memory to register 12
+// / 12 / 16 / 18 / 16 / 20 / 16 / 18 for (An) / (An)+ / d16(An) /
+// d8(An,Xn) / abs.W / abs.L / d16(PC) / d8(PC,Xn); plus 4 per register (8
+// for longs).
+uint32_t M68000::execute_movem(uint16_t opcode)
+{
+    const bool to_registers = (opcode & 0x0400) != 0;
+    const Size size = (opcode & 0x0040) != 0 ? Size::Long : Size::Word;
+    const uint32_t bytes = size_bytes(size);
+    const uint32_t mode = (opcode >> 3) & 7;
+    const uint32_t reg = opcode & 7;
+    const uint16_t mask = fetch_word();
+
+    const bool valid = to_registers ? (mode == 2 || mode == 3 || mode == 5 || mode == 6 || (mode == 7 && reg <= 3))
+                                    : (mode == 2 || mode == 4 || mode == 5 || mode == 6 || (mode == 7 && reg <= 1));
+    if (!valid) {
+        halt("invalid addressing mode", opcode);
+        return k_idle_cycles;
+    }
+    auto register_ref = [this](uint32_t number) -> uint32_t& { return number < 8 ? m_d[number] : m_a[number - 8]; };
+
+    uint32_t address = 0;
+    if (mode == 3 || mode == 4) {
+        address = m_a[reg];
+    } else {
+        address = decode_ea(mode, reg, size).address;
+    }
+    if ((address & 1) != 0) {
+        halt("address error: word/long access at an odd address (exception not emulated)", 0, false);
+        return k_idle_cycles;
+    }
+
+    uint32_t count = 0;
+    if (!to_registers && mode == 4) {
+        for (uint32_t i = 0; i < 16; ++i) { // bit 0 = A7 ... bit 15 = D0
+            if ((mask & (1u << i)) != 0) {
+                address -= bytes;
+                const uint32_t value = register_ref(15 - i);
+                if (size == Size::Long) {
+                    m_bus.write_long(address, value);
+                } else {
+                    m_bus.write_word(address, static_cast<uint16_t>(value));
+                }
+                ++count;
+            }
+        }
+        m_a[reg] = address;
+    } else {
+        for (uint32_t i = 0; i < 16; ++i) { // bit 0 = D0 ... bit 15 = A7
+            if ((mask & (1u << i)) == 0) {
+                continue;
+            }
+            if (to_registers) {
+                register_ref(i) = size == Size::Long
+                    ? m_bus.read_long(address)
+                    : static_cast<uint32_t>(static_cast<int32_t>(static_cast<int16_t>(m_bus.read_word(address))));
+            } else if (size == Size::Long) {
+                m_bus.write_long(address, register_ref(i));
+            } else {
+                m_bus.write_word(address, static_cast<uint16_t>(register_ref(i)));
+            }
+            address += bytes;
+            ++count;
+        }
+        if (mode == 3) {
+            m_a[reg] = address;
+        }
+    }
+
+    static constexpr uint32_t k_to_memory[7] = {0, 0, 8, 0, 8, 12, 14};
+    static constexpr uint32_t k_to_memory7[2] = {12, 16};
+    static constexpr uint32_t k_to_registers[7] = {0, 0, 12, 12, 0, 16, 18};
+    static constexpr uint32_t k_to_registers7[4] = {16, 20, 16, 18};
+    const uint32_t base = to_registers ? (mode == 7 ? k_to_registers7[reg] : k_to_registers[mode])
+                                       : (mode == 7 ? k_to_memory7[reg] : k_to_memory[mode]);
+    return base + count * (size == Size::Long ? 8 : 4);
 }
 
 } // namespace model1

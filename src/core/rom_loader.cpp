@@ -54,18 +54,56 @@ constexpr RomFileSpec k_vf_files[] = {
     {"mpr-16123.33", "MultiPCM 1 samples (high)", RomRole::MultiPcm1, 0x200000, 0x200000, RomLayout::Plain, 0x15d78844},
     {"mpr-16124.4", "MultiPCM 2 samples (low)", RomRole::MultiPcm2, 0x000000, 0x200000, RomLayout::Plain, 0x45520ba1},
     {"mpr-16125.5", "MultiPCM 2 samples (high)", RomRole::MultiPcm2, 0x200000, 0x200000, RomLayout::Plain, 0x9b4998b6},
-    {"315-5724.bin", "TGP firmware", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16096.26", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16097.27", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16098.28", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16099.29", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16100.30", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16101.31", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16102.32", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"mpr-16103.33", "polygon models", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
+    // The only known dump of VF's TGP program; MAME flags it BAD_DUMP and
+    // marks the game not working. VF has no TGP data ROM.
+    {"315-5724.bin", "TGP program (MB86233)", RomRole::TgpProgram, 0, 0x2000, RomLayout::Plain, 0x4b4f330e},
+    {"opr14742.bin", "TGP tables (low halves)", RomRole::TgpTables, 0, 0x20000, RomLayout::Word32Low, 0x446a1085},
+    {"opr14743.bin", "TGP tables (high halves)", RomRole::TgpTables, 2, 0x20000, RomLayout::Word32High, 0xe8953554},
+    {"mpr-16096.26", "polygon (model) ROM", RomRole::PolygonRom, 0x000000, 0x200000, RomLayout::Word32Low, 0xa92b0bf3},
+    {"mpr-16097.27", "polygon (model) ROM", RomRole::PolygonRom, 0x000002, 0x200000, RomLayout::Word32High, 0x0232955a},
+    {"mpr-16098.28", "polygon (model) ROM", RomRole::PolygonRom, 0x400000, 0x200000, RomLayout::Word32Low, 0xcf2e1b84},
+    {"mpr-16099.29", "polygon (model) ROM", RomRole::PolygonRom, 0x400002, 0x200000, RomLayout::Word32High, 0x20e46854},
+    {"mpr-16100.30", "polygon (model) ROM", RomRole::PolygonRom, 0x800000, 0x200000, RomLayout::Word32Low, 0xe13e983d},
+    {"mpr-16101.31", "polygon (model) ROM", RomRole::PolygonRom, 0x800002, 0x200000, RomLayout::Word32High, 0x0dbed94d},
+    {"mpr-16102.32", "polygon (model) ROM", RomRole::PolygonRom, 0xc00000, 0x200000, RomLayout::Word32Low, 0x4cb41fb6},
+    {"mpr-16103.33", "polygon (model) ROM", RomRole::PolygonRom, 0xc00002, 0x200000, RomLayout::Word32High, 0x526d1c76},
     {"epr-14869b.25", "I/O board firmware", RomRole::IoBoardCpu, 0, 0x10000, RomLayout::Plain, 0x2d093304},
-    {"opr14742.bin", "TGP tables", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
-    {"opr14743.bin", "TGP tables", RomRole::NotUsed, 0, 0, RomLayout::Plain, 0},
+    MODEL1_CPU_BOARD_FILES,
+};
+
+// Star Wars Arcade (MAME "swa", US). The 512 KB boot ROM also appears at
+// 0x000000 and 0x080000. The Digital Sound Board's files (Z80 program and
+// MPEG music) are recognised but not used yet.
+constexpr RomFileSpec k_swa_files[] = {
+    {"epr-16669.14", "V60 program ROM (even bytes)", RomRole::MainCpu, 0x200000, 0x80000, RomLayout::EvenBytes, 0x52e5e7e4},
+    {"epr-16670.15", "V60 program ROM (odd bytes)", RomRole::MainCpu, 0x200001, 0x80000, RomLayout::OddBytes, 0x1e7ecabd},
+    {"epr-16668.5", "V60 boot ROM (holds the reset address)", RomRole::MainCpu, 0xf80000, 0x80000, RomLayout::Plain, 0x9e112425},
+    {"epr-16668.5", "V60 boot ROM (mirror at 0x000000)", RomRole::MainCpu, 0x000000, 0x80000, RomLayout::Plain, 0x9e112425},
+    {"epr-16668.5", "V60 boot ROM (mirror at 0x080000)", RomRole::MainCpu, 0x080000, 0x80000, RomLayout::Plain, 0x9e112425},
+    // MAME flags this, the only known dump, as BAD_DUMP.
+    {"315-5711.bin", "TGP program (MB86233)", RomRole::TgpProgram, 0, 0x2000, RomLayout::Plain, 0x6a21f304},
+    {"opr14742.bin", "TGP tables (low halves)", RomRole::TgpTables, 0, 0x20000, RomLayout::Word32Low, 0x446a1085},
+    {"opr14743.bin", "TGP tables (high halves)", RomRole::TgpTables, 2, 0x20000, RomLayout::Word32High, 0xe8953554},
+    {"mpr-16472.39", "TGP data ROM (byte 0 of each word)", RomRole::TgpData, 0, 0x80000, RomLayout::Byte32Lane, 0x5a0d7553},
+    {"mpr-16473.40", "TGP data ROM (byte 1 of each word)", RomRole::TgpData, 1, 0x80000, RomLayout::Byte32Lane, 0x876c5399},
+    {"mpr-16474.41", "TGP data ROM (byte 2 of each word)", RomRole::TgpData, 2, 0x80000, RomLayout::Byte32Lane, 0x5864a26f},
+    {"mpr-16475.42", "TGP data ROM (byte 3 of each word)", RomRole::TgpData, 3, 0x80000, RomLayout::Byte32Lane, 0xb9266be9},
+    {"epr-16470.7", "68000 sound program", RomRole::SoundCpu, 0x00000, 0x20000, RomLayout::WordSwap, 0x7da18cf7},
+    {"mpr-16486.32", "MultiPCM 1 samples (low)", RomRole::MultiPcm1, 0x000000, 0x200000, RomLayout::Plain, 0x7df50533},
+    {"mpr-16487.33", "MultiPCM 1 samples (high)", RomRole::MultiPcm1, 0x200000, 0x200000, RomLayout::Plain, 0x31b28dfa},
+    {"mpr-16484.4", "MultiPCM 2 samples (low)", RomRole::MultiPcm2, 0x000000, 0x200000, RomLayout::Plain, 0x9d4c334d},
+    {"mpr-16485.5", "MultiPCM 2 samples (high)", RomRole::MultiPcm2, 0x200000, 0x200000, RomLayout::Plain, 0x95aadcad},
+    {"mpr-16476.26", "polygon (model) ROM", RomRole::PolygonRom, 0x000000, 0x200000, RomLayout::Word32Low, 0xd48609ae},
+    {"mpr-16477.27", "polygon (model) ROM", RomRole::PolygonRom, 0x000002, 0x200000, RomLayout::Word32High, 0xb979b082},
+    {"mpr-16478.28", "polygon (model) ROM", RomRole::PolygonRom, 0x400000, 0x200000, RomLayout::Word32Low, 0x80c780f7},
+    {"mpr-16479.29", "polygon (model) ROM", RomRole::PolygonRom, 0x400002, 0x200000, RomLayout::Word32High, 0xe43183b3},
+    {"mpr-16480.30", "polygon (model) ROM", RomRole::PolygonRom, 0x800000, 0x200000, RomLayout::Word32Low, 0x3185547a},
+    {"mpr-16481.31", "polygon (model) ROM", RomRole::PolygonRom, 0x800002, 0x200000, RomLayout::Word32High, 0xce8d76fe},
+    {"epr-14869b.25", "I/O board firmware", RomRole::IoBoardCpu, 0, 0x10000, RomLayout::Plain, 0x2d093304},
+    {"93c45.bin", "I/O board EEPROM defaults", RomRole::IoBoardEeprom, 0, 0x80, RomLayout::Plain, 0x65aac303},
+    {"epr-16471.2", "Digital Sound Board Z80 program", RomRole::DsbProgram, 0, 0x20000, RomLayout::Plain, 0xF4EE84A4},
+    {"mpr-16514.57", "Digital Sound Board MPEG music (first half)", RomRole::DsbMpeg, 0x000000, 0x200000, RomLayout::Plain, 0x3175B0BE},
+    {"mpr-16515.58", "Digital Sound Board MPEG music (second half)", RomRole::DsbMpeg, 0x200000, 0x200000, RomLayout::Plain, 0x3114D748},
     MODEL1_CPU_BOARD_FILES,
 };
 
@@ -123,6 +161,7 @@ constexpr KnownBadDump k_known_bad_dumps[] = {
 constexpr GameSpec k_games[] = {
     {"vf", "Virtua Fighter", k_vf_files},
     {"vr", "Virtua Racing", k_vr_files},
+    {"swa", "Star Wars Arcade", k_swa_files},
 };
 
 std::string to_lower(std::string_view text)
@@ -146,6 +185,8 @@ const char* role_name(RomRole role)
     case RomRole::TgpTables:  return "TGP tables";
     case RomRole::TgpData:    return "TGP data";
     case RomRole::PolygonRom: return "polygon ROM";
+    case RomRole::DsbProgram: return "DSB program";
+    case RomRole::DsbMpeg:    return "DSB MPEG data";
     case RomRole::NotUsed:   return "not used";
     }
     return "?";
@@ -177,7 +218,8 @@ std::map<std::string, fs::path> index_folder(const fs::path& folder, bool& has_z
 bool is_optional(RomRole role)
 {
     return role == RomRole::IoBoardCpu || role == RomRole::IoBoardEeprom || role == RomRole::TgpProgram
-        || role == RomRole::TgpTables || role == RomRole::TgpData || role == RomRole::PolygonRom;
+        || role == RomRole::TgpTables || role == RomRole::TgpData || role == RomRole::PolygonRom
+        || role == RomRole::DsbProgram || role == RomRole::DsbMpeg;
 }
 
 // Other names some ROM sets use for a file (same contents).
@@ -350,6 +392,8 @@ bool load_game_directory(const std::string& folder_path, Motherboard& motherboar
                           << (spec.role == RomRole::IoBoardCpu      ? "using the high-level I/O board stand-in"
                               : spec.role == RomRole::IoBoardEeprom ? "the I/O board EEPROM starts erased"
                               : spec.role == RomRole::PolygonRom    ? "3D objects from polygon ROM will be missing"
+                              : spec.role == RomRole::DsbProgram || spec.role == RomRole::DsbMpeg
+                                  ? "no music (Digital Sound Board not loaded)"
                                                                     : "using the high-level TGP")
                           << "\n";
                 if (spec.role == RomRole::IoBoardCpu && device_zip_only) {
@@ -501,6 +545,12 @@ bool load_game_directory(const std::string& folder_path, Motherboard& motherboar
         case RomRole::PolygonRom:
             written = motherboard.polygons().load_poly_rom(block.bytes, block.offset);
             break;
+        case RomRole::DsbProgram:
+            written = motherboard.dsb().load_program(block.bytes);
+            break;
+        case RomRole::DsbMpeg:
+            written = motherboard.dsb().load_mpeg_rom(block.bytes, block.offset);
+            break;
         case RomRole::NotUsed:
             written = true;
             break;
@@ -528,8 +578,10 @@ bool load_game_directory(const std::string& folder_path, Motherboard& motherboar
 
     // The control panel: Virtua Racing's wheel, pedals, view buttons and
     // shifter, or the default joystick + buttons.
-    motherboard.inputs().set_profile(std::string_view(game->id) == "vr" ? InputManager::Profile::VirtuaRacing
-                                                                        : InputManager::Profile::VirtuaFighter);
+    const std::string_view id = game->id;
+    motherboard.inputs().set_profile(id == "vr"    ? InputManager::Profile::VirtuaRacing
+                                     : id == "swa" ? InputManager::Profile::StarWars
+                                                   : InputManager::Profile::VirtuaFighter);
     return true;
 }
 

@@ -4,6 +4,7 @@
 #include "core/log.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 
 namespace model1 {
@@ -19,6 +20,10 @@ void InputManager::reset()
     m_player1 = k_idle_mask;
     m_player2 = k_idle_mask;
     m_steer_left = m_steer_right = m_accelerate = m_brake = false;
+    m_p2_left = m_p2_right = m_p2_up = m_p2_down = false;
+    m_throttle_up = m_throttle_down = false;
+    m_axes.fill(0.0f);
+    m_key_pedals = {k_pedal_released, k_pedal_released};
     m_pedal_frames = 0;
     reset_analog();
     publish();
@@ -32,10 +37,13 @@ void InputManager::set_profile(Profile profile)
 
 void InputManager::reset_analog()
 {
+    m_analog.fill(0xFF);
     if (m_profile == Profile::VirtuaRacing) {
-        m_analog = {k_wheel_centre, k_pedal_released, k_pedal_released, 0xFF};
-    } else {
-        m_analog = {0xFF, 0xFF, 0xFF, 0xFF};
+        m_analog[0] = k_wheel_centre;
+        m_analog[1] = m_analog[2] = k_pedal_released;
+    } else if (m_profile == Profile::StarWars) {
+        m_analog[0] = m_analog[1] = m_analog[4] = m_analog[5] = k_stick_centre;
+        m_analog[2] = k_throttle_idle;
     }
 }
 
@@ -48,26 +56,78 @@ uint8_t approach(uint8_t value, int target, int step)
     if (v > target) return static_cast<uint8_t>(std::max(v - step, target));
     return value;
 }
+
+// A self-centring keyboard axis: `low` / `high` push toward min / max.
+// A self-centring stick channel: the controller stick when it is off
+// centre (`stick` -1..1, mapped over min..max, reversed if asked), else the
+// keys.
+uint8_t axis(uint8_t value, bool low, bool high, float stick, bool reversed)
+{
+    using IM = InputManager;
+    if (stick != 0.0f) {
+        const float half = (IM::k_stick_max - IM::k_stick_min) / 2.0f;
+        const float v = IM::k_stick_centre + (reversed ? -stick : stick) * half;
+        return static_cast<uint8_t>(std::clamp(static_cast<int>(std::lround(v)), int{IM::k_stick_min}, int{IM::k_stick_max}));
+    }
+    const int target = low == high ? IM::k_stick_centre : low ? IM::k_stick_min : IM::k_stick_max;
+    return approach(value, target, IM::k_stick_step);
+}
+
+// Maps a pedal 0..1 onto released..0xFF.
+uint8_t pedal_value(float pedal, uint8_t released)
+{
+    return static_cast<uint8_t>(std::lround(released + pedal * (0xFF - released)));
+}
 } // namespace
 
 void InputManager::update_analog()
 {
+    if (m_profile == Profile::StarWars) {
+        // X is reversed in MAME (left = high), Y is not (up = low).
+        auto a = [this](Axis axis) { return axis_value(axis); };
+        m_analog[0] = axis(m_analog[0], m_steer_right, m_steer_left, a(Axis::Stick1X), true);
+        m_analog[1] = axis(m_analog[1], m_accelerate, m_brake, a(Axis::Stick1Y), false);
+        m_analog[4] = axis(m_analog[4], m_p2_right, m_p2_left, a(Axis::Stick2X), true);
+        m_analog[5] = axis(m_analog[5], m_p2_up, m_p2_down, a(Axis::Stick2Y), false);
+        // Throttle lever: keys at full speed, pedals in proportion.
+        const float faster = std::max(m_throttle_up ? 1.0f : 0.0f, a(Axis::Pedal1));
+        const float slower = std::max(m_throttle_down ? 1.0f : 0.0f, a(Axis::Pedal2));
+        if (faster != slower) {
+            const float push = faster > slower ? faster : slower;
+            const int step = std::max(1, static_cast<int>(std::lround(push * k_throttle_step)));
+            m_analog[2] = approach(m_analog[2], faster > slower ? k_throttle_full : k_throttle_idle, step);
+        }
+        publish();
+        return;
+    }
     if (m_profile != Profile::VirtuaRacing) {
         return;
     }
     // Wheel: a paddle as in MAME, lower values to the left. Racing (a pedal
     // held long enough): fast, self-centring. Menus (no pedal): slow, and it
     // stays where it is left, as the cabinet's wheel does.
-    m_pedal_frames = (m_accelerate || m_brake) ? std::min(m_pedal_frames + 1, k_spring_delay_frames) : 0;
+    // A controller adds a proportional wheel (while racing) and pedals.
+    const float stick = axis_value(Axis::Stick1X);
+    const float accelerator = axis_value(Axis::Pedal1);
+    const float brake = axis_value(Axis::Pedal2);
+    const bool pedal = m_accelerate || m_brake || accelerator > k_pedal_held || brake > k_pedal_held;
+    m_pedal_frames = pedal ? std::min(m_pedal_frames + 1, k_spring_delay_frames) : 0;
     const bool racing = m_pedal_frames >= k_spring_delay_frames;
-    if (m_steer_left != m_steer_right) {
-        m_analog[0] = approach(m_analog[0], m_steer_left ? k_wheel_left : k_wheel_right,
+    const bool left = m_steer_left || (!racing && stick <= -k_menu_steer);
+    const bool right = m_steer_right || (!racing && stick >= k_menu_steer);
+    if (left != right) {
+        m_analog[0] = approach(m_analog[0], left ? k_wheel_left : k_wheel_right,
                                racing ? k_wheel_step : k_wheel_menu_step);
+    } else if (racing && stick != 0.0f) {
+        const float v = k_wheel_centre + stick * 0x80;
+        m_analog[0] = static_cast<uint8_t>(std::clamp(static_cast<int>(std::lround(v)), 0, 0xFF));
     } else if (racing) {
         m_analog[0] = approach(m_analog[0], k_wheel_centre, k_wheel_step);
     }
-    m_analog[1] = approach(m_analog[1], m_accelerate ? 0xFF : k_pedal_released, k_pedal_step);
-    m_analog[2] = approach(m_analog[2], m_brake ? 0xFF : k_pedal_released, k_pedal_step);
+    m_key_pedals[0] = approach(m_key_pedals[0], m_accelerate ? 0xFF : k_pedal_released, k_pedal_step);
+    m_key_pedals[1] = approach(m_key_pedals[1], m_brake ? 0xFF : k_pedal_released, k_pedal_step);
+    m_analog[1] = std::max(m_key_pedals[0], pedal_value(accelerator, k_pedal_released));
+    m_analog[2] = std::max(m_key_pedals[1], pedal_value(brake, k_pedal_released));
     publish();
 }
 
@@ -76,9 +136,11 @@ void InputManager::publish()
     if (!m_publishing) {
         return;
     }
-    // The firmware publishes the four ADC channels twice (0-3 and 4-7).
+    // Star Wars uses all eight channels; for the other games the stand-in
+    // publishes the four wired ones twice (0-3 and 4-7).
+    const uint32_t wired = m_profile == Profile::StarWars ? 8 : 4;
     for (uint32_t i = 0; i < k_analog_count; ++i) {
-        m_shared_ram.board_write(k_analog_index + i, m_analog[i % k_analog_channels]);
+        m_shared_ram.board_write(k_analog_index + i, m_analog[i % wired]);
     }
     m_shared_ram.board_write(k_system_index, static_cast<uint8_t>(m_system));
     m_shared_ram.board_write(k_player1_index, static_cast<uint8_t>(m_player1));
@@ -86,6 +148,7 @@ void InputManager::publish()
     for (uint32_t i = k_unused_first; i <= k_unused_last; ++i) {
         m_shared_ram.board_write(i, 0xFF);
     }
+    m_shared_ram.board_write(k_status_index, k_status_ready);
 }
 
 void InputManager::service()
@@ -122,6 +185,22 @@ InputManager::BitLocation InputManager::locate(Input input) const
         case Input::P1Button4: return {Port::Player1, 1u << 0}; // VR4 (green)
         case Input::P1Button5: return {Port::Player1, 1u << 4}; // shift down
         case Input::P1Button6: return {Port::Player1, 1u << 5}; // shift up
+        default:               return {Port::System, 0};        // analog or not wired
+        }
+    }
+    if (m_profile == Profile::StarWars) {
+        switch (input) {
+        case Input::Coin1:     return {Port::System, 1u << 0};
+        case Input::Coin2:     return {Port::System, 1u << 1};
+        case Input::Test:      return {Port::System, 1u << 2};
+        case Input::Service:   return {Port::System, 1u << 3};
+        case Input::Start1:    return {Port::System, 1u << 4};
+        case Input::Start2:    return {Port::System, 1u << 5};
+        case Input::P1Button1: return {Port::Player1, 1u << 0};
+        case Input::P1Button2: return {Port::Player1, 1u << 1};
+        case Input::P2Button1: return {Port::Player1, 1u << 2};
+        case Input::P2Button2: return {Port::Player1, 1u << 3};
+        case Input::P1Button3: return {Port::Player1, 1u << 4};
         default:               return {Port::System, 0};        // analog or not wired
         }
     }
@@ -192,6 +271,12 @@ void InputManager::set_input(Input input, bool pressed)
     case Input::P1Right: m_steer_right = pressed; break;
     case Input::P1Up:    m_accelerate = pressed; break;
     case Input::P1Down:  m_brake = pressed; break;
+    case Input::P2Left:  m_p2_left = pressed; break;
+    case Input::P2Right: m_p2_right = pressed; break;
+    case Input::P2Up:    m_p2_up = pressed; break;
+    case Input::P2Down:  m_p2_down = pressed; break;
+    case Input::P1Button5: m_throttle_up = pressed; break;
+    case Input::P1Button6: m_throttle_down = pressed; break;
     default: break;
     }
     const BitLocation location = locate(input);
@@ -216,6 +301,17 @@ void InputManager::set_input(Input input, bool pressed)
                       << " -> " << Hex{port, 4} << '\n';
         }
     }
+}
+
+void InputManager::set_axis(Axis axis, float value)
+{
+    const bool pedal = axis == Axis::Pedal1 || axis == Axis::Pedal2;
+    const float dead = pedal ? k_pedal_dead_zone : k_stick_dead_zone;
+    const float v = std::clamp(value, pedal ? 0.0f : -1.0f, 1.0f);
+    const float magnitude = std::abs(v);
+    // Outside the dead zone the range is rescaled so it still reaches 1.
+    const float scaled = magnitude <= dead ? 0.0f : (magnitude - dead) / (1.0f - dead);
+    m_axes[static_cast<std::size_t>(axis)] = v < 0 ? -scaled : scaled;
 }
 
 uint16_t InputManager::port_value(Port port) const

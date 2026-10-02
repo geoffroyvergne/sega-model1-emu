@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/input_manager.hpp"
+#include "input/shared_presses.hpp"
 
 #include <array>
 #include <cstdint>
@@ -16,17 +17,20 @@ namespace model1 {
 // Default bindings:
 //   Arrow keys / W A S D   Player 1 up, left, down, right
 //   J K L / Z X C          Player 1 buttons 1, 2, 3
+//   U I O / V B N          Player 1 buttons 4, 5, 6
+//   Keypad 8 5 4 6         Player 2 up, down, left, right
+//   Keypad 1 2 3           Player 2 buttons 1, 2, 3
 //   1 / 2                  Start 1 / Start 2
 //   5 / 6                  Coin 1 / Coin 2
 //   F2                     Test switch
 //   9                      Service switch
 //
-// Several keys may drive the same input; the input stays pressed until all
-// of them are released. All inputs are released when the window loses focus,
+// Several keys (and game controllers, through SharedPresses) may drive the
+// same input; the input stays pressed until all of them are released. All inputs are released when the window loses focus,
 // so a key released in another application does not stay stuck.
 class KeyboardInput {
 public:
-    explicit KeyboardInput(InputManager& inputs) : m_inputs(inputs) {}
+    explicit KeyboardInput(SharedPresses& presses) : m_presses(presses) {}
 
     // Call for every polled SDL event; non-keyboard events are ignored
     // except window focus loss. Never blocks.
@@ -36,7 +40,7 @@ private:
     void key_changed(int scancode, bool pressed);
     void release_all();
 
-    InputManager& m_inputs;
+    SharedPresses& m_presses;
     // Number of currently held keys bound to each input.
     std::array<uint8_t, InputManager::k_input_count> m_held_keys{};
 };

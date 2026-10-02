@@ -123,16 +123,19 @@ TEST_CASE(rom_virtua_fighter_set_lands_in_the_right_places)
 {
     TempDir dir;
     write_set(dir, "vf");
-    write_file(dir.path() / "mpr-16096.26", 16, "unused"); // a polygon ROM: recognised, not used
+    write_file(dir.path() / "315-5571.bin", 16, "unused"); // a geometrizer program: recognised, not used
     auto board = std::make_unique<Motherboard>();
     board->reset();
     CHECK(model1::load_game_directory(dir.str(), *board)); // game detected from the files
     CHECK(log_contains("Virtua Fighter (vf)"));
     CHECK(log_contains("18 of 18 needed files found"));
-    CHECK(log_contains("Loaded 19 files")); // 18 needed + the optional I/O board firmware
+    // 18 needed + the optional I/O board firmware, TGP program, 2 table ROMs
+    // and 8 polygon ROMs.
+    CHECK(log_contains("Loaded 30 files"));
     CHECK(board->io_board().has_firmware());
     CHECK(log_contains("present but not used"));
     CHECK(log_contains("CRC32")); // mock contents: checksum warnings, still loaded
+    CHECK(board->tgp_copro().is_active()); // program + tables (VF has no TGP data ROM)
 
     model1::Bus& bus = board->bus();
     // Program ROM: two 512 KB chips byte-interleaved at 0x200000.
@@ -296,3 +299,4 @@ TEST_CASE(rom_eeprom_defaults_loaded_from_93c45)
     board->reset(); // the EEPROM keeps its contents across resets
     CHECK_EQ(board->io_board().eeprom().word(0), 0x5345u);
 }
+

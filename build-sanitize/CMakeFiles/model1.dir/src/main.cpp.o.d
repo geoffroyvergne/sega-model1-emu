@@ -949,19 +949,22 @@ CMakeFiles/model1.dir/src/main.cpp.o: \
   /Users/gv/dev/projects/sega-model1-emu/src/core/bus.hpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/bitset \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/is_char_like_type.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/digital_sound_board.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/audio/mp2_decoder.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/dual_port_ram.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/interrupt_controller.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/io_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.hpp \
-  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
-  /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.hpp \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.hpp \
@@ -970,6 +973,8 @@ CMakeFiles/model1.dir/src/main.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/deque.h \
   /Users/gv/dev/projects/sega-model1-emu/src/core/v60.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/rom_loader.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/input/gamepad_input.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/input/shared_presses.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/input/keyboard_input.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/video/video_manager.hpp \
   /opt/homebrew/include/SDL2/SDL.h /opt/homebrew/include/SDL2/SDL_main.h \

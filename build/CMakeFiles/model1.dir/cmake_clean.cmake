@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/model1.dir/src/audio/audio_output.cpp.o"
   "CMakeFiles/model1.dir/src/audio/audio_output.cpp.o.d"
+  "CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o"
+  "CMakeFiles/model1.dir/src/input/gamepad_input.cpp.o.d"
   "CMakeFiles/model1.dir/src/input/keyboard_input.cpp.o"
   "CMakeFiles/model1.dir/src/input/keyboard_input.cpp.o.d"
   "CMakeFiles/model1.dir/src/main.cpp.o"

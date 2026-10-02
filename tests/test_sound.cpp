@@ -391,3 +391,77 @@ TEST_CASE(sound_bus_logs_each_unmapped_address_once)
     CHECK_EQ(count("unmapped write8 at 0x00C10001"), 1u);
     CHECK_EQ(count("unmapped write8 at 0x00C10003"), 1u);
 }
+
+// ---------------------------------------------------------------------------
+// Main board interrupt controller (0xE00000): VBlank and the UART (level 3)
+// ---------------------------------------------------------------------------
+
+TEST_CASE(interrupt_controller_mask_ack_and_sources)
+{
+    auto board = std::make_unique<Motherboard>();
+    board->reset();
+    model1::Bus& bus = board->bus();
+    model1::InterruptController& irq = board->interrupts();
+    CHECK_EQ(bus.read_byte(0xE00002), 0xFFu); // all masked at power-on
+
+    board->run_frame();
+    CHECK_EQ(irq.status(), 0u); // VBlank masked
+
+    bus.write_byte(0xE00002, 0xFD); // VBlank only (as VR and VF)
+    board->run_frame();
+    CHECK_EQ(irq.status(), 0x02u);
+    CHECK(irq.line());
+    CHECK_EQ(irq.acknowledge(), 1u);
+    bus.write_byte(0xE00000, 0x20); // acknowledge the level taken
+    CHECK_EQ(irq.status(), 0u);
+
+    // Level 3: the main UART ready to send (VF's sound queue pump). The
+    // UART is idle and enabled; unmasking level 3 raises it at once.
+    bus.write_byte(0xC40002, k_mode_8n1_x16);
+    bus.write_byte(0xC40002, k_cmd_tx_rx);
+    bus.write_byte(0xE00002, 0xF5);
+    CHECK_EQ(irq.status() & 0x08u, 0x08u);
+    bus.write_byte(0xE00000, 0x10); // clear everything
+    CHECK_EQ(irq.status(), 0u);
+    CHECK(!irq.line());
+}
+
+TEST_CASE(glue_timers_raise_level_0_and_count_down)
+{
+    // Unit: a period-3 timer fires every 3 x 0x800 cycles; reads give the
+    // time left in 0x800-cycle units; period 0 stops it.
+    model1::GlueTimers timers;
+    timers.reset();
+    timers.write(2, 3);
+    CHECK_EQ(timers.read(6), 3u);
+    CHECK_EQ(timers.run(0x800 * 3 - 1), 0u);
+    CHECK_EQ(timers.read(6), 0u);
+    CHECK_EQ(timers.run(1), 1u);
+    CHECK_EQ(timers.read(6), 3u);
+    CHECK_EQ(timers.run(0x800 * 6), 2u);
+    timers.run(0x800);
+    CHECK_EQ(timers.read(6), 2u);
+    timers.write(2, 0);
+    CHECK_EQ(timers.run(0x800 * 10), 0u);
+    CHECK_EQ(timers.read(6), 2u); // last value read
+    CHECK_EQ(timers.read(8), 0u); // timer 1 never started
+    // Byte writes: the even address is the low byte.
+    timers.write_byte(4, 0x34);
+    timers.write_byte(5, 0x12);
+    CHECK_EQ(timers.period(1), 0x1234u);
+
+    // On the board: level 0 pending once a timer expires, only when unmasked.
+    auto board = std::make_unique<Motherboard>();
+    board->reset();
+    model1::Bus& bus = board->bus();
+    model1::InterruptController& irq = board->interrupts();
+    bus.write_word(0xE00008, 1); // fires every 2,048 cycles
+    board->run_frame();
+    CHECK_EQ(irq.status() & 0x01u, 0u); // masked (power-on mask 0xFF)
+    bus.write_byte(0xE00002, 0x3C);     // Star Wars Arcade's mask: levels 0, 1, 6, 7
+    board->run_frame();
+    CHECK_EQ(irq.status() & 0x01u, 0x01u);
+    CHECK(bus.read_word(0xE0000C) <= 1u);
+    bus.write_word(0xE0000C, 0); // count writes ignored
+    CHECK(!log_contains("unmapped"));
+}

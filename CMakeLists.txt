@@ -74,12 +74,15 @@ find_package(SDL2 REQUIRED CONFIG)
 # Shared by the emulator executable and the unit tests.
 # ---------------------------------------------------------------------------
 add_library(model1_core STATIC
+    src/audio/mp2_decoder.cpp
     src/audio/multipcm.cpp
     src/audio/ym3438.cpp
     src/core/bus.cpp
+    src/core/digital_sound_board.cpp
     src/core/eeprom_93c46.cpp
     src/core/i8251.cpp
     src/core/input_manager.cpp
+    src/core/interrupt_controller.cpp
     src/core/io_board.cpp
     src/core/m68000.cpp
     src/core/mb86233.cpp
@@ -108,6 +111,7 @@ model1_set_warnings(model1_core)
 add_executable(model1
     src/main.cpp
     src/audio/audio_output.cpp
+    src/input/gamepad_input.cpp
     src/input/keyboard_input.cpp
     src/video/video_manager.cpp
 )
@@ -150,6 +154,7 @@ if(MODEL1_BUILD_TESTS)
         tests/test_io_board.cpp
         tests/test_z80.cpp
         tests/test_tgp_copro.cpp
+        tests/test_dsb.cpp
     )
     target_link_libraries(emulator_tests PRIVATE model1_core)
     model1_set_warnings(emulator_tests)
@@ -160,7 +165,10 @@ if(MODEL1_BUILD_TESTS)
     add_executable(host_tests
         tests/test_main.cpp
         tests/test_audio_host.cpp
+        tests/test_input_host.cpp
         src/audio/audio_output.cpp
+        src/input/gamepad_input.cpp
+        src/input/keyboard_input.cpp
     )
     target_link_libraries(host_tests PRIVATE model1_core SDL2::SDL2)
     model1_set_warnings(host_tests)

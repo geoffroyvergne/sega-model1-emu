@@ -43,6 +43,9 @@ public:
 
     // Wires this UART's TxD to `peer`'s RxD (one direction).
     void connect_transmitter_to(I8251& peer) { m_peer = &peer; }
+    // Wires TxD to a second receiver as well: the line is shared (Star Wars
+    // Arcade's sound board UART also feeds the Digital Sound Board).
+    void add_second_receiver(I8251& peer) { m_second_peer = &peer; }
 
     // CPU interface. `reg` is the C/D pin: 0 = data, 1 = control/status.
     uint8_t read(uint32_t reg);
@@ -72,6 +75,7 @@ private:
 
     std::string m_name;
     I8251* m_peer = nullptr;
+    I8251* m_second_peer = nullptr;
 
     bool    m_expecting_mode = true;
     // Synchronous mode: after the mode byte, the next 1 or 2 control writes
