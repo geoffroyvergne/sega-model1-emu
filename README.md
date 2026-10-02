@@ -2,7 +2,7 @@
 
 An emulator for the Sega Model 1 arcade board, written in C++20 with SDL2. Supported ROM sets: **Virtua Racing** (`vr`) and **Virtua Fighter** (`vf`).
 
-> **Status: Virtua Racing is playable.** It boots through its test-mode screen into attract mode with full 3D (courses, cars, the Bay Bridge, a 3D SEGA logo). A coin and the accelerator start a race, and the car steers and accelerates; the brake, view buttons and shifter are wired to the keyboard too. All the board's processors run their real firmware: the NEC V60 main CPU, the MB86233 TGP geometry DSP, the Z80 I/O board and the 68000 sound CPU. There is no FM music yet, the interrupt controller isn't emulated, and a few 3D details are wrong (see [Known limitations](#known-limitations)). Virtua Fighter's ROM set loads, but its TGP program isn't wired up yet, so it doesn't run.
+> **Status: Virtua Racing is playable.** It boots through its test-mode screen into attract mode with full 3D (courses, cars, the Bay Bridge, a 3D SEGA logo). A coin and the accelerator start a race, and the car steers and accelerates; the brake, view buttons and shifter are wired to the keyboard too. All the board's processors run their real firmware: the NEC V60 main CPU, the MB86233 TGP geometry DSP, the Z80 I/O board and the 68000 sound CPU. The sound board is complete (two MultiPCMs and the YM3438 FM chip). The interrupt controller isn't emulated, and a few 3D details are wrong (see [Known limitations](#known-limitations)). Virtua Fighter's ROM set loads, but its TGP program isn't wired up yet, so it doesn't run.
 
 ## Contents
 
@@ -22,7 +22,7 @@ An emulator for the Sega Model 1 arcade board, written in C++20 with SDL2. Suppo
 
 ```sh
 brew install cmake sdl2                                    # macOS; see Building for Linux / Windows
-cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DMODEL1_TRACE_IRQ=OFF
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
 cmake --build build-release
 ./build-release/model1 path/to/vr                          # an unzipped MAME "vr" ROM set
 ```
@@ -144,20 +144,33 @@ The real Model 1 sound board, from MAME's `segam1audio`: a **Motorola 68000 at 1
 - **68000 skeleton:** D0–D7, A0–A7 with separate supervisor and user stacks, PC and SR. Reset loads the stack pointer and PC from the vector table.
   - **Interrupts:** level-sensitive and autovectored. The UART's "receiver ready" signal drives level 2 (vector address `0x68`).
   - **Instructions:** NOP, STOP, RTE, Bcc/BRA/BSR, RTS, JSR/JMP, MOVEQ, SWAP, TST, ADD/SUB/ADDA/SUBA/ADDX/SUBX, CMP/CMPA/CMPM/EOR, OR/AND, MULU/MULS, DIVU/DIVS (worst-case timing), ABCD/SBCD, EXG, ADDQ/SUBQ, the immediate group (ORI/ANDI/SUBI/ADDI/EORI/CMPI, including ORI/ANDI/EORI to CCR and SR), the shifts and rotates (ASx/LSx/ROXx/ROx, register and memory forms), LEA, DBcc, MOVE/MOVEA, MOVE to SR, CLR, and the bit operations BTST/BCHG/BCLR/BSET (static `#n` and dynamic `Dn` forms). All 12 addressing modes are decoded, and cycle counts come from the MC68000 manual. A word or long access at an odd address, or any other opcode, halts with a logged message.
+  - **Verified against Musashi:** a differential test (not in the repository) ran Virtua Racing's sound program through this core and through Musashi, a mature 68000 emulator, instruction by instruction, over 40 seconds of play (attract mode, a coin, course select, the start of a race). Registers, flags and memory writes matched on all 41.7 million instructions; the only differences were a few ADDA/SUBA cycle counts (±2 cycles).
 
 ### Sound output (`src/audio/multipcm.*`, `src/audio/ym3438.*`, `src/audio/audio_output.*`)
 - **MultiPCM (×2):** Sega's 28-voice sample playback chip (Yamaha YMW-258-F), following MAME's `multipcm`/`gew` devices. It's part of the SDL-free core.
   - **Registers:** the port interface (slot select, register select, data) and 12-byte sample headers.
   - **Playback:** octave/pitch stepping, 8-bit and packed 12-bit samples with linear interpolation, and loop points.
-  - **Volume:** attenuation (0.375 dB per step) and pan, plus the board's sample-ROM bank registers.
-  - **Output:** 10 MHz ÷ 224 = 44,642.86 Hz stereo, generated in lockstep with the CPUs, so each register write takes effect at the right sample.
-- **YM3438 (timers only):** the FM chip at 8 MHz, clocked from the 68000's cycle count (exactly 180 CPU cycles per FM sample).
+  - **Volume:** attenuation (0.375 dB per step) and pan, plus the board's sample-ROM bank registers. Attenuation changes glide when the game asks for it (register 5 bit 0 clear: 128 steps per 78 ms when getting louder, half that speed when getting quieter). Virtua Racing's sound program asks for a glide on about 90% of its volume changes.
+  - **Envelopes:** attack, decay 1 down to the decay level, decay 2, and release at key-off, on a 10-bit level spanning 96 dB. Rates come from the YMF278B ("OPL4") tables, scaled by octave and pitch (key rate scaling). Rate 0 holds, and release rate 15 stops the note at once. The sample header loads the settings, and registers 7–9 can change them.
+  - **LFOs:** vibrato (pitch, up to ±79 cents) and tremolo (level, up to −24 dB), at 8 speeds from 0.17 to 7 Hz.
+  - **Output:** 10 MHz ÷ 224 = 44,642.86 Hz stereo, generated in lockstep with the CPUs, so each register write takes effect at the right sample. Levels match MAME: a full-scale sample at full volume leaves the chip at about −0.1 dB, and the two chips are mixed at half level each.
+- **YM3438 (OPN2C) FM synthesis:** the FM chip at 8 MHz, clocked from the 68000's cycle count (exactly 180 CPU cycles per FM sample, 55,555.6 Hz), following MAME's `ymfm` (verified against Nuked-OPN2's die analysis). It's part of the SDL-free core.
+  - **Synthesis:** 6 channels of 4 operators, the 8 algorithms, operator 1 self-feedback, detune and multiple, and the chip's log-sin and power tables. The tables are generated from their formulas; all 512 entries match the values read from the die.
+  - **Envelopes:** attack (exponential), decay, sustain and release, with rates 0–63 after key scaling, clocked every third sample as on the chip. SSG-EG (repeat, alternate and hold) is included.
+  - **LFO:** tremolo (AM, up to 11.8 dB) and vibrato (PM), at the 8 hardware rates (3.98–72.2 Hz).
+  - **Other features:** channel 3's per-operator frequencies and CSM key-on (Timer A overflows), the channel 6 DAC (`0x2A`/`0x2B`/`0x2C`), the latched frequency high byte, and per-channel left/right output.
+  - **Output:** each channel is clipped to 9 bits and the six are summed, scaled as in MAME (one channel at full volume ≈ ±5,460).
+  - **Mix:** the sound board resamples the FM stream to the MultiPCM rate (exactly 56 FM samples per 45 output samples, linear interpolation) and mixes with MAME's gains: 0.5 per MultiPCM, 0.3 for the YM3438.
   - **Timers:** Timer A overflows every (1024 − A) samples, Timer B every (256 − B) × 16; register `0x27` starts/stops them, enables and clears their status flags. The sound program's main loop waits on Timer A, so this paces the sound driver.
-  - **Not emulated yet:** FM synthesis (no FM audio). All register writes are stored for it; the first FM write is logged.
+  - **In Virtua Racing:** a 30-second run (attract mode, a coin, the start of a race) uses FM channels 5 and 6 for the coin chime: a stereo pair, slightly detuned, algorithm 4 with full feedback. The music in that run is all MultiPCM.
 - **Host output:** SDL at 44.1 kHz, signed 16-bit stereo, with a 512-frame device buffer. The chip stream is resampled by linear interpolation and queued with `SDL_QueueAudio`.
-  - No emulator data is shared with SDL's audio thread, so there's nothing to lock or deadlock on, and no allocation happens there.
+  - **A 50 ms safety margin:** the emulator delivers one frame's audio (735 output frames) every 1/60 s, while the device reads 512 frames on its own clock. At startup, or if the queue ever runs nearly dry, it is topped up with silence to about 50 ms, so the device never waits between deliveries.
+  - **Rate control:** the resampling ratio is nudged by at most ±0.5% (inaudible) to hold the queue near that target. This absorbs the drift between the 60 Hz frame loop and the sound card's clock without gaps or dropped audio. On CoreAudio the queue stays between about 1,800 and 2,500 frames.
   - Queued audio is capped at 100 ms; anything beyond that is dropped and counted.
+  - At shutdown the log reports frames played and dropped, underruns, and the silence inserted.
+  - No emulator data is shared with SDL's audio thread, so there's nothing to lock or deadlock on, and no allocation happens there.
   - If no audio device is available, the emulator runs silently.
+  - **Speed warning:** if the emulator can't keep up with real time (for example a Debug build at `-O0`: about 43 FPS on Virtua Racing), the game runs slow and the sound must stutter. The main loop measures this every 2 seconds and logs a warning once.
 
 ### Timing (`src/main.cpp`, `src/core/motherboard.*`)
 - A 60 Hz frame loop paced by the high-resolution counter; it measured exactly 60.0 FPS.
@@ -276,7 +289,7 @@ src/core/io_board.*         Model 1 I/O board: Z80 + 315-5338A + ADC + EEPROM ru
 src/core/z80.*              Zilog Z80 core (I/O board CPU)
 src/core/eeprom_93c46.*     93C46-style serial EEPROM (64 x 16)
 src/audio/multipcm.*        Sega MultiPCM sample playback chip (core, no SDL)
-src/audio/ym3438.*          YM3438 FM chip: timers only so far (core, no SDL)
+src/audio/ym3438.*          YM3438 FM chip: synthesis, envelopes, LFO, DAC, timers (core, no SDL)
 src/audio/audio_output.*    SDL audio output: resampling and queueing (host side)
 src/core/tilemap_renderer.* System 24 tilemap chip: 2D layers, window masks, scrolling, palette
 src/core/polygon_renderer.* Display-list interpreter, depth sort, flat quad rasterizer
@@ -293,9 +306,9 @@ tests/test_m68000.cpp       68000 tests: MOVE to SR, CLR, MOVE addressing modes,
 tests/test_tilemap.cpp      2D layer tests: decoding, scrolling, layering, worst-case safety, demo HUD text
 tests/test_polygons.cpp     3D tests: fill, depth sort, clipping, stipple, colours, lists, 0x05/0x06 uploads and bounds, 3D objects (projection, culling, frustum clipping, lighting), cube demo culling
 tests/test_sound.cpp        Sound tests: UART timing and errors, 68000 skeleton, V60 -> sound command, lockstep cycles
-tests/test_multipcm.cpp     MultiPCM tests: registers, pitch, 8/12-bit samples, loops, pan, banks, 440 Hz tone, audio rate
-tests/test_ym3438.cpp       YM3438 tests: Timer A/B periods, flags, stop/restart, VR's Timer A wait (exact cycles)
-tests/test_audio_host.cpp   host_tests (SDL): audio device open/close with a deadlock watchdog, resampler
+tests/test_multipcm.cpp     MultiPCM tests: registers, pitch, 8/12-bit samples, loops, pan, banks, envelopes, attenuation glides, vibrato/tremolo, 440 Hz tone, audio rate
+tests/test_ym3438.cpp       YM3438 tests: timers, VR's Timer A wait; FM pitch, level, pan, envelopes, algorithms, feedback, latch, DAC, LFO, lockstep mix
+tests/test_audio_host.cpp   host_tests (SDL): audio device open/close with a deadlock watchdog, resampler, rate control, no underruns at 60 Hz deliveries
 tests/test_rom_loader.cpp   ROM loader tests: mock VF/VR sets in temp folders, every destination, error cases
 tests/test_io_board.cpp     I/O board: shared RAM, stand-in, EEPROM protocol and timing, 315-5338A, ADC, a small Z80 firmware, Virtua Racing / Virtua Fighter control panels
 tests/test_z80.cpp          Z80 tests: flags, DAA, 16-bit, stack, timing, IX/IY and DDCB, block ops, interrupts, I/O
@@ -338,29 +351,38 @@ The build copies `SDL2.dll` next to the executable, so it runs straight from the
 
 Only the macOS build has been tested so far. The Linux and Windows steps are standard but have not been run.
 
-**To play, use an optimized build.** The default `Debug` build is for development: it isn't guaranteed to keep up with 60 FPS once a game runs all four processors. A Release build with interrupt tracing off is the one to play with:
+**Both build types are fast enough to play.** Measured on an Apple M1 Pro without a window, Virtua Racing runs at:
+
+| Build | Speed |
+|---|---|
+| Release | about 236–250 frames per second (about 4× real time) |
+| Debug (default; `-O1` with debug info, see `MODEL1_DEBUG_OPTIMIZE`) | about 213 frames per second (3.5× real time) |
+| Debug at `-O0` (`MODEL1_DEBUG_OPTIMIZE=OFF`) | about 43 frames per second (72% of real time): the game runs slow and the sound stutters, and the emulator logs a warning |
+
+A Release build:
 
 ```sh
-cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DMODEL1_TRACE_IRQ=OFF
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
 cmake --build build-release
 ```
 
-For reference, the Release build runs Virtua Racing at about 250 frames per second on an Apple M1 Pro, measured without a window (about 4× the real speed).
+Interrupt tracing (`MODEL1_TRACE_IRQ`) is off by default. Turned on, it prints two lines per frame, and a terminal that can't keep up stalls the emulator, and the sound with it. Build directories created before this default changed keep their old setting; reconfigure them with `-DMODEL1_TRACE_IRQ=OFF`.
 
 **Build directories** used in this project (any names work):
 
 | Directory | Configuration | Use |
 |---|---|---|
 | `build/` | Debug | Development and unit tests |
-| `build-release/` | Release, `MODEL1_TRACE_IRQ=OFF` | Playing |
+| `build-release/` | Release | Playing |
 | `build-sanitize/` | Debug, `MODEL1_SANITIZE=ON` | Memory-safety test runs |
 
 ### Build options
 
 | Option | Default | Effect |
 |---|---|---|
-| `CMAKE_BUILD_TYPE` | `Debug` | Use `Release` for an optimized build (single-config generators such as Make and Ninja). |
-| `MODEL1_TRACE_IRQ` | `ON` | Logs every CPU interrupt request and acknowledgement. |
+| `CMAKE_BUILD_TYPE` | `Debug` | Use `Release` for a fully optimized build (single-config generators such as Make and Ninja). |
+| `MODEL1_DEBUG_OPTIMIZE` | `ON` | GCC/Clang: compiles Debug builds at `-O1` (debug info kept), fast enough to play. Turn off for `-O0` when stepping through code in a debugger. |
+| `MODEL1_TRACE_IRQ` | `OFF` | Logs every CPU interrupt request and acknowledgement (two lines per frame). |
 | `MODEL1_TRACE_TGP` | `OFF` | Logs every TGP function executed (very verbose). |
 | `MODEL1_TRACE_INPUT` | `ON` | Prints a confirmation when a coin or start key is pressed. |
 | `MODEL1_BUILD_TESTS` | `ON` | Builds the `emulator_tests` unit test executable. |
@@ -369,7 +391,7 @@ For reference, the Release build runs Virtua Racing at about 250 frames per seco
 Example:
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMODEL1_TRACE_IRQ=OFF
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMODEL1_TRACE_INPUT=OFF
 ```
 
 ## Running
@@ -391,7 +413,7 @@ build\Debug\model1.exe [same options]   # Windows
   - The renderer sorts and fills them.
 
   Combine it with `--tile-demo` to see the full layer order: background tiles, then the cube, then the high-priority HUD text.
-- `--sound-demo` plays a 440 Hz beep, half a second on and half a second off. A 64-point sine wave is placed in MultiPCM 1's sample ROM, and slot 0 is programmed through the sound bus (octave 0, pitch 268) and keyed on and off each half second.
+- `--sound-demo` plays a 440 Hz beep, half a second on and half a second off. A 64-point sine wave is placed in MultiPCM 1's sample ROM, and slot 0 is programmed through the sound bus (octave 0, pitch 268) and keyed on and off each half second, with a 3 ms attack and a 170 ms release so the beep doesn't click.
 - `--no-audio` doesn't open an audio device.
 - `--trace N` logs the next N instructions of each CPU with their address and bytes (`[V60 trace] 0x00FE000E: 0x13 0x80 ...`, `[68000 trace] 0x00000200: 0x46FC 0x2700 ...`), to map out the boot code.
 - **With no ROM loaded and no demo option, the 3D demo starts automatically,** so the window isn't just black. `--no-demo` gives a blank machine instead.
@@ -516,7 +538,7 @@ cmake --build build --target emulator_tests
 ./build/emulator_tests sub_         # run only tests whose name contains "sub_"
 ./build/emulator_tests --verbose    # also show each test's emulator log
 cd build && ctest --output-on-failure   # through CTest (runs emulator_tests and host_tests)
-./build/host_tests                  # SDL audio tests: device lifecycle, resampler
+./build/host_tests                  # SDL audio tests: device lifecycle, resampler, queue margin
 ```
 
 `host_tests` links SDL and opens audio devices. It uses SDL's `dummy` audio driver, plus the real device when one is available. A watchdog aborts the run if a test hangs, for example on a deadlock with SDL's audio thread.
@@ -545,7 +567,7 @@ Running emulator tests
   ...
   [PASS] rom_bad_folders_and_game_names
 
-241 passed, 0 failed
+254 passed, 0 failed
 ```
 
 The exit code is 0 only if every selected test passed.
@@ -678,7 +700,7 @@ The main board talks to the sound board only through the serial link: the V60 wr
 | `0x000000–0x03FFFF` | Sound program ROM (reset vectors at 0 and 4) |
 | `0x080000–0x09FFFF` | Mirror of ROM `0x20000–0x3FFFF` |
 | `0xC20000–0xC20003` | UART: data at `0xC20001`, control/status at `0xC20003` (8-bit, odd addresses) |
-| `0xD00000` | YM3438 FM chip: timers emulated, FM synthesis not yet |
+| `0xD00000–0xD00007` | YM3438 FM chip: address / data for part 1 at `0xD00001` / `0xD00003`, part 2 at `0xD00005` / `0xD00007`; status on reads |
 | `0xC40000–0xC40007` | MultiPCM 1: data `0xC40001`, slot select `0xC40003`, register select `0xC40005` |
 | `0xC50000–0xC50001` | MultiPCM 1 sample bank (megabyte seen at chip address `0x100000`) |
 | `0xC60000–0xC60007`, `0xC70000` | MultiPCM 2 and its bank register |
@@ -691,11 +713,15 @@ The main board talks to the sound board only through the serial link: the V60 wr
 | 0 | Pan, bits 7–4: 0 = centre, 1–7 = left louder, 8 = muted, 9–15 = right louder |
 | 1 | Sample number, low 8 bits (bit 8 is register 2 bit 0). Writing it loads the sample header |
 | 2, 3 | Pitch: octave = register 3 bits 7–4 (signed); pitch = register 3 bits 3–0 and register 2 bits 7–2. Step = 2^(octave−1) × (1 + pitch/1024) samples per output sample |
-| 4 | Bit 7: key on (start from the beginning) or key off |
-| 5 | Attenuation, bits 7–1 (0 = loudest, 0.375 dB per step) |
-| 6–10 | LFO and envelope parameters (stored; not emulated yet) |
+| 4 | Bit 7: key on (start from the beginning, with the attack) or key off (start the release; release rate 15 stops at once) |
+| 5 | Attenuation, bits 7–1 (0 = loudest, 0.375 dB per step); bit 0 = 1 sets it at once, 0 glides to it |
+| 6 | LFO speed (bits 5–3), vibrato depth (bits 2–0) |
+| 7 | Attack rate (bits 7–4), decay 1 rate (bits 3–0) |
+| 8 | Decay level (bits 7–4, 6 dB per step), decay 2 rate (bits 3–0) |
+| 9 | Key rate scaling (bits 7–4; 15 = off), release rate (bits 3–0) |
+| 10 | Tremolo depth (bits 2–0) |
 
-Sample header (12 bytes per sample at the start of sample ROM): start address (3 bytes; bit 22 = 12-bit format), loop start (2 bytes), 0x10000 minus the length (2 bytes), then LFO and envelope settings.
+Sample header (12 bytes per sample at the start of sample ROM): start address (3 bytes; bit 22 = 12-bit format), loop start (2 bytes), 0x10000 minus the length (2 bytes), then byte 7 → register 6, bytes 8–10 → registers 7–9, byte 11 → register 10 (copied when the sample is selected).
 
 **UART programming** (both sides): write a mode byte to the control register (for example `0x4E`: asynchronous, ×16 clock, 8 data bits, no parity, 1 stop bit), then a command byte (bit 0 transmit enable, bit 2 receive enable, bit 4 error reset, bit 6 back to mode). Then read and write data bytes. Status bits: 0 TxRDY, 1 RxRDY, 2 TxEMPTY, 3 parity error, 4 overrun, 5 framing error.
 
@@ -753,7 +779,7 @@ Display lists are 16-bit words; a long is two words, low word first. The **list 
 - **Virtua Racing:** playable, with these gaps:
   - **3D:** objects above the HUD (`0x41`) are drawn below it; a few stray single-pixel points appear in some scenes (degenerate polygons drawn as points). The renderer is a high-level simulation like MAME's, so exact pixel coverage and the colour/luminance path may differ from the real board.
   - **2D:** the tilemap chip's special split modes are drawn as normal mode (a warning is logged); VR uses special mode 1 on tilemaps 2/3.
-  - **Sound:** no FM music or effects (YM3438 synthesis missing). On a boot with valid saved settings, the first sound command (`0x81`) can be lost (see *Timing* below).
+  - **Sound:** on a boot with valid saved settings, the first sound command (`0x81`) can be lost (see *Timing* below).
   - **Drive board** (force feedback, port E) isn't emulated.
 - **Virtua Fighter:** the set loads, but its TGP program (`315-5724.bin`) and polygon ROMs aren't wired up, so it doesn't run. It falls back on the high-level TGP, which has only a few functions.
 - **CPU:** some V60 instructions are still missing, notably PREPARE/DISPOSE, the downward string searches (SCHCD/SKPCD), string compares, the other bit-string instructions and double-precision floating point (MAME doesn't implement those either). Every instruction is charged a flat 8 cycles.
@@ -768,7 +794,7 @@ Display lists are 16-bit words; a long is two words, low word first. The **list 
 - **I/O board:** the EEPROM isn't saved between runs, so the operator settings reset to the defaults each run. The shared RAM's interrupt mailboxes aren't emulated.
 - **Inputs:** keyboard only: no game controllers, real analog wheel or player 2 keys.
 - **Timing:** the V60 is charged a flat 8 cycles per instruction (as in MAME). On a boot with valid saved settings this lets VR send its first sound command (`0x81`) before the sound CPU has enabled its UART receiver, so the byte is lost, as the real i8251 would lose it; real V60 timings would likely fix this.
-- **Sound:** the 68000 core implements only the instructions the VR sound program has needed so far. MultiPCM envelopes (a keyed-on voice plays at full level and stops at key-off), LFOs, gradual volume changes, reverse playback and the effect send are not emulated; the YM3438 only has its timers (Timer A/B, flags, control register 0x27), so there is no FM audio yet; its interrupt output isn't wired to the 68000. Audio is paced by the frame loop, so a slow drift between the host's audio and video clocks could occasionally cause a short gap or a dropped chunk (capped at 100 ms of latency). The main board side of the UART raises no interrupt yet, because the main interrupt controller isn't emulated.
+- **Sound:** the YM3438's interrupt output isn't wired to the 68000 (the sound program polls Timer A instead), and its busy flag is never set (writes take effect at once). The 68000 core implements only the instructions the VR sound program has needed so far. The MultiPCM's effect send isn't emulated (it feeds an external effects DSP the Model 1 board doesn't have), and octave −8 plays at 2^−9 (MAME wraps it to 2^7). The main board side of the UART raises no interrupt yet, because the main interrupt controller isn't emulated. Smooth sound needs the emulator to run at full speed: use a Release build.
 
 ## Roadmap
 
@@ -776,8 +802,7 @@ Planned next steps, roughly in order:
 
 1. **Virtua Racing polish:** draw `0x41` objects above the HUD, remove the stray points, the tilemap chip's special mode 1, and save the EEPROM between runs.
 2. **Interrupt controller** at `0xE00000`, with level-triggered VBlank and a real acknowledge.
-3. **Sound:** YM3438 FM synthesis, then MultiPCM envelopes and LFOs.
-4. **Virtua Fighter:** wire up its TGP program (`315-5724.bin`) and polygon ROMs, then fix whatever its code needs next.
-5. **Real video timing:** 57.52 Hz, with VBlank at line 384.
-6. **Game controllers:** SDL gamepads and analog sticks for the wheel and pedals; player 2 keys.
-7. **More games:** manifests for the other Model 1 sets (Star Wars Arcade, Wing War, NetMerc).
+3. **Virtua Fighter:** wire up its TGP program (`315-5724.bin`) and polygon ROMs, then fix whatever its code needs next.
+4. **Real video timing:** 57.52 Hz, with VBlank at line 384.
+5. **Game controllers:** SDL gamepads and analog sticks for the wheel and pedals; player 2 keys.
+6. **More games:** manifests for the other Model 1 sets (Star Wars Arcade, Wing War, NetMerc).

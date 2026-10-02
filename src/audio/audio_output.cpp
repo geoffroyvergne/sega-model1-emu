@@ -37,14 +37,24 @@ bool AudioOutput::open(double source_rate)
         return false;
     }
 
-    m_step = source_rate / static_cast<double>(k_output_rate);
+    m_base_step = source_rate / static_cast<double>(k_output_rate);
+    m_step = m_base_step;
+    m_smoothed_queue = k_target_queued_frames;
+    m_started = false;
     m_position = 0.0;
     m_history_left = 0;
     m_history_right = 0;
     // Room for one chunk of output (plus rounding), allocated once.
-    m_resampled.assign((static_cast<std::size_t>(static_cast<double>(k_max_chunk_frames) / m_step) + 4) * k_channels, 0);
+    // (The step can be k_max_rate_adjust below nominal.)
+    m_resampled.assign(
+        (static_cast<std::size_t>(static_cast<double>(k_max_chunk_frames) / (m_base_step * (1.0 - k_max_rate_adjust))) + 4)
+            * k_channels,
+        0);
+    m_silence.assign(static_cast<std::size_t>(k_target_queued_frames) * k_channels, 0);
     m_frames_queued = 0;
     m_frames_dropped = 0;
+    m_frames_padded = 0;
+    m_underruns = 0;
 
     SDL_PauseAudioDevice(m_device, 0); // start playback
     std::cerr << "[Audio] Output open: " << obtained.freq << " Hz, 16-bit stereo, " << obtained.samples
@@ -56,7 +66,7 @@ void AudioOutput::close()
 {
     if (m_device != 0) {
         std::cerr << "[Audio] Output closed: " << m_frames_queued << " frames played, " << m_frames_dropped
-                  << " dropped\n";
+                  << " dropped, " << m_underruns << " underruns (" << m_frames_padded << " frames of silence inserted)\n";
         SDL_PauseAudioDevice(m_device, 1);
         SDL_ClearQueuedAudio(m_device);
         SDL_CloseAudioDevice(m_device);
@@ -72,6 +82,12 @@ std::size_t AudioOutput::queued_frames() const
     return SDL_GetQueuedAudioSize(m_device) / (k_channels * sizeof(int16_t));
 }
 
+double AudioOutput::rate_factor(double queued, double target)
+{
+    const double error = std::clamp((queued - target) / target, -1.0, 1.0);
+    return 1.0 + k_max_rate_adjust * error;
+}
+
 // Linear-interpolation resampler. The input is seen as a continuous stream:
 // position 0 is the last frame of the previous submission (the "history"),
 // positions 1..n are this submission's frames.
@@ -80,6 +96,30 @@ void AudioOutput::submit(std::span<const int16_t> interleaved)
     if (m_device == 0) {
         return;
     }
+
+    // Keep a margin: top an (almost) empty queue up with silence, so that
+    // this delivery plus the margin reach the target level.
+    const std::size_t queued = queued_frames();
+    if (m_started && queued == 0) {
+        ++m_underruns;
+    }
+    if (queued < static_cast<std::size_t>(k_device_buffer_frames)) {
+        const auto incoming = static_cast<std::size_t>(static_cast<double>(interleaved.size() / k_channels) / m_base_step);
+        const std::size_t target = static_cast<std::size_t>(k_target_queued_frames);
+        const std::size_t pad = target > queued + incoming ? target - queued - incoming : 0;
+        if (pad > 0 && SDL_QueueAudio(m_device, m_silence.data(),
+                                      static_cast<Uint32>(pad * k_channels * sizeof(int16_t))) == 0) {
+            m_frames_padded += pad;
+        }
+        m_smoothed_queue = k_target_queued_frames;
+    }
+    m_started = true;
+
+    // Steer the queue toward the target. The measured level saw-tooths with
+    // each delivery and device read, so it is smoothed first.
+    m_smoothed_queue += (static_cast<double>(queued_frames()) - m_smoothed_queue) * 0.05;
+    m_step = m_base_step * rate_factor(m_smoothed_queue, k_target_queued_frames);
+
     std::size_t offset = 0;
     const std::size_t total = interleaved.size() / k_channels;
     while (offset < total) {

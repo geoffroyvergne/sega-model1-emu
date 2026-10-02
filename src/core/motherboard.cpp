@@ -653,6 +653,11 @@ void Motherboard::load_sound_demo()
     header[4] = 0x00;
     header[5] = static_cast<uint8_t>((0x10000 - k_wave_length) >> 8); // end, stored as 0x10000 - length
     header[6] = static_cast<uint8_t>(0x10000 - k_wave_length);
+    // Envelope: attack rate 12 (3 ms), no decay (full level while held),
+    // no key rate scaling, release rate 10 (about 170 ms): no clicks.
+    header[8] = 0xC0;  // attack 12, decay 1 rate 0
+    header[9] = 0x00;  // decay level 0, decay 2 rate 0
+    header[10] = 0xFA; // key rate scaling off, release 10
     std::array<uint8_t, k_wave_length> wave{};
     for (uint32_t i = 0; i < k_wave_length; ++i) {
         const double angle = 2.0 * 3.14159265358979323846 * static_cast<double>(i) / k_wave_length;

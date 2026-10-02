@@ -13167,10 +13167,23 @@ CMakeFiles/emulator_tests.dir/tests/test_ym3438.cpp.o: /Users/gv/dev/projects/se
   /Library/Developer/CommandLineTools/usr/lib/clang/21/include/stdint.h \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/multipcm.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/audio/ym3438.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/bus.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/dual_port_ram.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/eeprom_93c46.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/i8251.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/input_manager.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/io_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/m68000.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/mb86233.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/motherboard.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/polygon_renderer.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_board.hpp \
   /Users/gv/dev/projects/sega-model1-emu/src/core/sound_bus.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/tgp.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/tgp_copro.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/tilemap_renderer.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/v60.hpp \
+  /Users/gv/dev/projects/sega-model1-emu/src/core/z80.hpp \
   /Users/gv/dev/projects/sega-model1-emu/tests/test_framework.hpp
 
 CMakeFiles/emulator_tests.dir/tests/test_z80.cpp.o: /Users/gv/dev/projects/sega-model1-emu/tests/test_z80.cpp \

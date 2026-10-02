@@ -26,6 +26,33 @@ void SoundBoard::reset()
     m_audio_frames = 0;
     m_audio_generated = 0;
     m_audio_dropped = 0;
+    m_fm_previous = {};
+    m_fm_next = {};
+    m_fm_phase = 0;
+    m_fm_underruns = 0;
+}
+
+// The FM chip's output at the next mixed-sample time: advance 56/45 of an
+// FM sample and interpolate. The chip is clocked by the 68000 ahead of the
+// mix, so its samples are normally waiting; if not, the last one is held.
+void SoundBoard::next_fm_frame(int32_t& left, int32_t& right)
+{
+    m_fm_phase += k_fm_step;
+    while (m_fm_phase >= k_fm_step_divisor) {
+        m_fm_phase -= k_fm_step_divisor;
+        m_fm_previous = m_fm_next;
+        int16_t l = 0;
+        int16_t r = 0;
+        if (m_ym->pop_output(l, r)) {
+            m_fm_next = {l, r};
+        } else {
+            ++m_fm_underruns;
+        }
+    }
+    const auto fraction = static_cast<int32_t>(m_fm_phase);
+    const auto divisor = static_cast<int32_t>(k_fm_step_divisor);
+    left = m_fm_previous[0] + (m_fm_next[0] - m_fm_previous[0]) * fraction / divisor;
+    right = m_fm_previous[1] + (m_fm_next[1] - m_fm_previous[1]) * fraction / divisor;
 }
 
 uint32_t SoundBoard::step()
@@ -54,14 +81,22 @@ void SoundBoard::generate_audio(std::size_t frames)
         const std::size_t chunk = std::min(frames - done, k_audio_buffer_frames);
         m_pcm1->generate(m_scratch1, chunk);
         m_pcm2->generate(m_scratch2, chunk);
-        // Mix: each chip at 0.5 (MAME's routing gains). Only frames that fit
-        // in the buffer are stored.
+        // Mix with MAME's routing gains. The FM stream advances for every
+        // frame; only frames that fit in the buffer are stored.
         const std::size_t stored = done < kept ? std::min(chunk, kept - done) : 0;
-        for (std::size_t frame = 0; frame < stored; ++frame) {
+        for (std::size_t frame = 0; frame < chunk; ++frame) {
+            std::array<int32_t, 2> fm{};
+            next_fm_frame(fm[0], fm[1]);
+            if (frame >= stored) {
+                continue;
+            }
             for (std::size_t channel = 0; channel < 2; ++channel) {
                 const std::size_t in = frame * 2 + channel;
-                const int32_t mixed = (static_cast<int32_t>(m_scratch1[in]) + m_scratch2[in]) / 2;
-                m_audio[(m_audio_frames + done + frame) * 2 + channel] = static_cast<int16_t>(mixed);
+                const int32_t mixed = ((static_cast<int32_t>(m_scratch1[in]) + m_scratch2[in]) * k_pcm_gain_tenths
+                                       + fm[channel] * k_fm_gain_tenths)
+                                      / 10;
+                m_audio[(m_audio_frames + done + frame) * 2 + channel] =
+                    static_cast<int16_t>(std::clamp(mixed, -32768, 32767));
             }
         }
         done += chunk;

@@ -169,6 +169,14 @@ int main(int argc, char* argv[])
     const uint64_t ticks_per_frame = counter_freq / model1::Motherboard::k_refresh_rate_hz;
     uint64_t next_frame = SDL_GetPerformanceCounter() + ticks_per_frame;
 
+    // Speed check: if the machine can't be emulated in real time, the game
+    // runs slow and the audio queue runs dry (stuttering sound). Measured
+    // over 2-second windows, reported once.
+    constexpr uint64_t k_speed_window_frames = 2 * model1::Motherboard::k_refresh_rate_hz;
+    uint64_t speed_window_start = SDL_GetPerformanceCounter();
+    uint64_t speed_window_frames = 0;
+    bool speed_warned = false;
+
     bool running = true;
     while (running) {
         running = poll_events(keyboard);
@@ -200,6 +208,24 @@ int main(int argc, char* argv[])
                 SDL_Delay(static_cast<uint32_t>(remaining_ms - 1));
             }
             now = SDL_GetPerformanceCounter();
+        }
+
+        if (++speed_window_frames == k_speed_window_frames) {
+            const double seconds = static_cast<double>(now - speed_window_start) / static_cast<double>(counter_freq);
+            const double fps = static_cast<double>(k_speed_window_frames) / seconds;
+            if (!speed_warned && fps < 0.95 * model1::Motherboard::k_refresh_rate_hz) {
+                speed_warned = true;
+                std::cerr << "[Main] WARNING: emulating at " << static_cast<int>(fps) << " FPS ("
+                          << static_cast<int>(100.0 * fps / model1::Motherboard::k_refresh_rate_hz)
+                          << "% of real time): the game runs slow and the sound stutters.";
+#ifndef NDEBUG
+                std::cerr << " This is a Debug build; a Release build is about 7x faster"
+                             " (cmake -DCMAKE_BUILD_TYPE=Release, see README).";
+#endif
+                std::cerr << '\n';
+            }
+            speed_window_start = now;
+            speed_window_frames = 0;
         }
 
         // If we fell far behind (debugger, window drag), resync instead of fast-forwarding.

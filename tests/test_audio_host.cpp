@@ -1,6 +1,7 @@
 // Host audio tests (SDL): the audio device opens and closes cleanly and
 // repeatedly - alone and with the whole emulator running - without hanging,
-// and the resampler produces the right amount of output.
+// the resampler produces the right amount of output, and steady 60 Hz
+// deliveries play without underruns.
 //
 // A watchdog aborts the process if a test hangs (e.g. a deadlock between
 // the emulator and SDL's audio thread).
@@ -12,8 +13,10 @@
 
 #include <SDL.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
@@ -150,12 +153,56 @@ TEST_CASE(audio_resampler_output_count)
     SdlAudio sdl("dummy");
     AudioOutput audio;
     CHECK(audio.open(SoundBoard::k_audio_rate_hz));
-    CHECK(audio.step() > 1.012 && audio.step() < 1.013);
+    CHECK(audio.base_step() > 1.012 && audio.base_step() < 1.013);
     std::vector<int16_t> chunk(744 * 2, 500);
     for (int i = 0; i < 5; ++i) {
         audio.submit(chunk);
     }
-    const double expected = 5.0 * 744.0 / audio.step();
+    // Within the rate control's +-0.5% of nominal; the silence that
+    // primes the queue is counted separately.
+    const double expected = 5.0 * 744.0 / audio.base_step();
     const auto total = static_cast<double>(audio.frames_queued_total() + audio.frames_dropped_total());
-    CHECK(total >= expected - 2 && total <= expected + 2);
+    CHECK(total >= expected * 0.994 && total <= expected * 1.006);
+    CHECK(audio.frames_padded_total() > 0);
+}
+
+TEST_CASE(audio_rate_factor_steers_toward_the_target)
+{
+    const double target = AudioOutput::k_target_queued_frames;
+    CHECK_EQ(AudioOutput::rate_factor(target, target), 1.0);
+    CHECK_EQ(AudioOutput::rate_factor(0, target), 1.0 - AudioOutput::k_max_rate_adjust);        // empty: stretch
+    CHECK_EQ(AudioOutput::rate_factor(target * 2, target), 1.0 + AudioOutput::k_max_rate_adjust); // full: squeeze
+    CHECK_EQ(AudioOutput::rate_factor(target * 10, target), 1.0 + AudioOutput::k_max_rate_adjust); // clamped
+    CHECK(AudioOutput::rate_factor(target * 1.5, target) > 1.0);
+}
+
+TEST_CASE(audio_steady_deliveries_play_without_underruns)
+{
+    // One frame of emulator audio (744 frames) every 1/60 s, as the main
+    // loop delivers it. Without a margin the queue starts empty and falls
+    // under one device read (512 frames) between deliveries; with it, it
+    // stays well above. Checked over the first 20 deliveries: the dummy
+    // driver consumes a little slower than real time, so its queue grows
+    // over longer runs. (On a real device the queue settles near the
+    // target: measured on CoreAudio, 1,771-2,466 frames.)
+    Watchdog watchdog(std::chrono::seconds(20));
+    SdlAudio sdl("dummy");
+    AudioOutput audio;
+    CHECK(audio.open(SoundBoard::k_audio_rate_hz));
+    std::vector<int16_t> chunk(744 * 2, 500);
+    std::size_t lowest = SIZE_MAX; // queue level just before each delivery
+    const auto start = std::chrono::steady_clock::now();
+    for (int frame = 0; frame < 20; ++frame) {
+        std::this_thread::sleep_until(start + std::chrono::microseconds(16'667 * frame));
+        if (frame > 0) {
+            lowest = std::min(lowest, audio.queued_frames());
+        }
+        audio.submit(chunk);
+    }
+    // The queue never runs dry (without the margin it reaches 0 at the
+    // second delivery). Its exact low point depends on how the dummy
+    // driver's thread is scheduled, so only "never empty" is checked.
+    CHECK(lowest > 0);
+    CHECK_EQ(audio.underruns(), 0u);
+    CHECK_EQ(audio.frames_dropped_total(), 0u);
 }

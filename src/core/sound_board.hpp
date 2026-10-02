@@ -19,15 +19,23 @@ namespace model1 {
 // receives commands from the main board over a 31.25 kbaud serial line.
 // The UART's RxRDY output drives the 68000's interrupt level 2.
 //
-// Audio: the two MultiPCM chips are mixed (0.5 each, as in MAME) into a
-// stereo stream at their output rate, 10 MHz / 224 = 44,642.86 Hz.
-// The YM3438 FM chip runs at 8 MHz from the 68000's cycle count; only its
-// timers are emulated (the sound program waits on Timer A), not FM audio.
+// Audio: a stereo stream at the MultiPCM output rate, 10 MHz / 224 =
+// 44,642.86 Hz, mixing (with MAME's gains) the two MultiPCM chips at 0.5
+// each and the YM3438 FM chip at 0.3. The YM3438 runs at 8 MHz from the
+// 68000's cycle count and produces a sample every 144 clocks (55,555.6 Hz),
+// exactly 56 FM samples for every 45 mixed samples; its stream is
+// resampled by linear interpolation.
 class SoundBoard {
 public:
     static constexpr uint32_t k_cpu_clock_hz = 10'000'000;
     static constexpr int k_uart_irq_level = 2;
     static constexpr double k_audio_rate_hz = static_cast<double>(k_cpu_clock_hz) / MultiPCM::k_clock_divider;
+    // FM samples per mixed sample: (8 MHz / 144) / (10 MHz / 224) = 56 / 45.
+    static constexpr uint32_t k_fm_step = 56;
+    static constexpr uint32_t k_fm_step_divisor = 45;
+    // Mixing gains, in tenths (MAME: MultiPCM 0.5, YM3438 0.3).
+    static constexpr int32_t k_pcm_gain_tenths = 5;
+    static constexpr int32_t k_fm_gain_tenths = 3;
 
     // Capacity of the internal audio buffer, in stereo frames (~90 ms).
     static constexpr std::size_t k_audio_buffer_frames = 4096;
@@ -62,6 +70,9 @@ public:
     void clear_audio() { m_audio_frames = 0; }
     [[nodiscard]] uint64_t audio_frames_generated() const { return m_audio_generated; }
     [[nodiscard]] uint64_t audio_frames_dropped() const { return m_audio_dropped; }
+    // FM samples the mix needed before the chip had produced them (should
+    // stay 0: the 68000, which clocks the chip, runs ahead of the mix).
+    [[nodiscard]] uint64_t fm_underruns() const { return m_fm_underruns; }
 
 private:
     std::unique_ptr<I8251> m_uart;
@@ -79,6 +90,15 @@ private:
     std::size_t m_audio_frames = 0;
     uint64_t m_audio_generated = 0;
     uint64_t m_audio_dropped = 0;
+
+    // FM resampler: the two FM samples around the current position, and
+    // the position between them in 45ths.
+    std::array<int32_t, 2> m_fm_previous{};
+    std::array<int32_t, 2> m_fm_next{};
+    uint32_t m_fm_phase = 0;
+    uint64_t m_fm_underruns = 0; // FM samples needed before the chip made them
+
+    void next_fm_frame(int32_t& left, int32_t& right);
 };
 
 } // namespace model1

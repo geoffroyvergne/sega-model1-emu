@@ -219,6 +219,9 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 //Build the unit tests
 MODEL1_BUILD_TESTS:BOOL=ON
 
+//Optimize Debug builds with -O1 (GCC/Clang)
+MODEL1_DEBUG_OPTIMIZE:BOOL=ON
+
 //Build with AddressSanitizer, UBSan and bounds-checked containers
 // (GCC/Clang)
 MODEL1_SANITIZE:BOOL=OFF
@@ -227,7 +230,7 @@ MODEL1_SANITIZE:BOOL=OFF
 MODEL1_TRACE_INPUT:BOOL=ON
 
 //Trace V60 interrupt requests and acknowledgements
-MODEL1_TRACE_IRQ:BOOL=ON
+MODEL1_TRACE_IRQ:BOOL=OFF
 
 //Trace TGP function execution
 MODEL1_TRACE_TGP:BOOL=OFF

@@ -25,8 +25,9 @@ include(CompilerWarnings)
 # Options
 # ---------------------------------------------------------------------------
 # Log every V60 interrupt request / acknowledgement (two lines per frame once
-# a game enables interrupts).
-option(MODEL1_TRACE_IRQ "Trace V60 interrupt requests and acknowledgements" ON)
+# a game enables interrupts). Off by default: when playing, a terminal that
+# can't keep up with the output stalls the emulator, and the sound with it.
+option(MODEL1_TRACE_IRQ "Trace V60 interrupt requests and acknowledgements" OFF)
 # Log every TGP function executed (very verbose once games run).
 option(MODEL1_TRACE_TGP "Trace TGP function execution" OFF)
 # Print a confirmation to stdout when a coin or start input is pressed.
@@ -40,6 +41,15 @@ option(MODEL1_BUILD_TESTS "Build the unit tests" ON)
 # object (e.g. tile RAM into character RAM within Bus); the library checks can.
 # Any violation aborts with a report.
 option(MODEL1_SANITIZE "Build with AddressSanitizer, UBSan and bounds-checked containers (GCC/Clang)" OFF)
+# Compile Debug builds with light optimization (-O1, debug info kept). At -O0
+# a game runs at about 72% of real time, so the sound stutters; at -O1 it
+# runs at about 3.5x real time, close to Release. Turn off for step-by-step
+# debugging of optimized-out variables.
+option(MODEL1_DEBUG_OPTIMIZE "Optimize Debug builds with -O1 (GCC/Clang)" ON)
+
+if(MODEL1_DEBUG_OPTIMIZE AND NOT MSVC)
+    add_compile_options($<$<CONFIG:Debug>:-O1>)
+endif()
 
 if(MODEL1_SANITIZE)
     if(MSVC)
