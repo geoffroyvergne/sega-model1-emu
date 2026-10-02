@@ -276,7 +276,7 @@ TEST_CASE(tilemap_worst_case_registers_render_safely)
     CHECK_EQ(rig.frame.size(), TilemapRenderer::k_pixel_count);
     CHECK_EQ(rig.px(0, 0), k_white);
     CHECK_EQ(rig.px(495, 383), k_white);
-    CHECK(model1_test::captured_log().find("special mode 3") != std::string::npos);
+    CHECK(model1_test::captured_log().find("Special mode 3") != std::string::npos);
 }
 
 TEST_CASE(tilemap_undersized_buffers_are_refused)
@@ -326,4 +326,73 @@ TEST_CASE(tilemap_demo_hud_text_renders)
     const uint32_t x1 = Motherboard::k_demo_coin_col * 8;
     const uint32_t y1 = Motherboard::k_demo_coin_row * 8;
     CHECK_EQ(px(x1 + 2, y1), 0xFFFFE700u); // rgb(31, 28, 0)
+}
+
+// ---------------------------------------------------------------------------
+// Special split modes (tilemaps 2 / 3, as Virtua Racing's sky / landscape)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// Tilemap 2 solid red, tilemap 3 solid green; window masks all set (in the
+// normal mode they would hide tilemap 2 entirely).
+TileRig split_rig()
+{
+    TileRig rig;
+    rig.palette(1, k_c_red);
+    rig.palette(2, k_c_green);
+    rig.solid_tile(1, 1);
+    rig.solid_tile(2, 2);
+    rig.fill(2, 1);
+    rig.fill(3, 2);
+    for (uint32_t word = 0x6800; word < 0x7000; ++word) {
+        rig.reg(word, 0xFFFF);
+    }
+    return rig;
+}
+
+} // namespace
+
+TEST_CASE(tilemap_special_mode_1_splits_at_a_line)
+{
+    // Mode 1 (bits 14-13 of 0x5006 = 01): split at line (-vscroll) & 0x1FF.
+    // vscroll 0x219C: -0x219C = 0xDE64 -> line 100, bit 9 set: tilemap 2
+    // above, tilemap 3 below. Masks ignored.
+    TileRig rig = split_rig();
+    rig.reg(0x5006, 0x219C);
+    rig.render();
+    CHECK_EQ(rig.px(10, 50), k_red);
+    CHECK_EQ(rig.px(400, 99), k_red);
+    CHECK_EQ(rig.px(10, 100), k_green);
+    CHECK_EQ(rig.px(400, 300), k_green);
+
+    // 0x239C: -0x239C = 0xDC64 -> line 100 again, bit 9 clear: swapped.
+    rig.reg(0x5006, 0x239C);
+    rig.render();
+    CHECK_EQ(rig.px(10, 50), k_green);
+    CHECK_EQ(rig.px(10, 150), k_red);
+}
+
+TEST_CASE(tilemap_special_mode_2_splits_at_a_column)
+{
+    // Mode 2: split at column hscroll & 0x1FF (200), bit 9 set: tilemap 2
+    // on the left.
+    TileRig rig = split_rig();
+    rig.reg(0x5006, 0x4000);
+    rig.reg(0x5002, 0x200 | 200);
+    rig.render();
+    CHECK_EQ(rig.px(10, 10), k_red);
+    CHECK_EQ(rig.px(199, 300), k_red);
+    CHECK_EQ(rig.px(200, 10), k_green);
+    CHECK_EQ(rig.px(495, 300), k_green);
+
+    // Per-line horizontal scroll: each line has its own split column.
+    rig.reg(0x5002, 0x8000);
+    for (uint32_t y = 0; y < 384; ++y) {
+        rig.reg(0x4000 + 2 * 0x200 + y, static_cast<uint16_t>(0x200 | (y < 192 ? 50 : 300)));
+    }
+    rig.render();
+    CHECK_EQ(rig.px(60, 10), k_green);
+    CHECK_EQ(rig.px(60, 300), k_red);
+    CHECK_EQ(rig.px(310, 300), k_green);
 }

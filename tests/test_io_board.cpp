@@ -163,38 +163,72 @@ TEST_CASE(io_inputs_virtua_racing_controls)
     CHECK_EQ(bus.read_byte(0xC00012), 0xEEu);
 
     // Steering and pedals are not digital bits.
-    inputs.set_input(In::P1Left, true);
-    inputs.set_input(In::P1Up, true);
+    inputs.set_input(In::P1Right, true);
+    inputs.set_input(In::P1Down, true);
     CHECK_EQ(bus.read_byte(0xC00012), 0xEEu);
+    inputs.set_input(In::P1Down, false);
 
-    // Held keys move the wheel and the accelerator a step per frame...
+    // Menus (no pedal): the wheel turns slowly and stays where it is left,
+    // so a course can be picked (VR: about 0xB0 = course 2, 0xD0+ = 3).
     inputs.update_analog();
-    CHECK_EQ(inputs.analog(0), 0x80u - InputManager::k_wheel_step);
-    CHECK_EQ(inputs.analog(1), 0x30u + InputManager::k_pedal_step);
-    CHECK_EQ(inputs.analog(2), 0x30u);
-    for (int i = 0; i < 20; ++i) {
+    CHECK_EQ(inputs.analog(0), 0x80u + InputManager::k_wheel_menu_step);
+    for (int i = 0; i < 13; ++i) {
         inputs.update_analog();
     }
-    CHECK_EQ(inputs.analog(0), InputManager::k_wheel_left);
-    CHECK_EQ(inputs.analog(1), 0xFFu);
-    CHECK_EQ(bus.read_byte(0xC00000), 0x00u); // published
-    CHECK_EQ(bus.read_byte(0xC00002), 0xFFu);
+    CHECK_EQ(inputs.analog(0), 0x80u + 14 * InputManager::k_wheel_menu_step); // 0xB8
+    inputs.set_input(In::P1Right, false);
+    for (int i = 0; i < 60; ++i) {
+        inputs.update_analog();
+    }
+    CHECK_EQ(inputs.analog(0), 0xB8u);         // still there after a second
+    CHECK_EQ(bus.read_byte(0xC00000), 0xB8u);  // published
 
-    // ...and spring back when released; both directions held = centred.
-    inputs.set_input(In::P1Up, false);
-    inputs.set_input(In::P1Right, true);
-    for (int i = 0; i < 20; ++i) {
+    // Pressing the accelerator: the wheel holds still while the game reads
+    // the confirmation, then (racing) springs back to centre.
+    inputs.set_input(In::P1Up, true);
+    for (int i = 0; i < InputManager::k_spring_delay_frames - 1; ++i) {
+        inputs.update_analog();
+    }
+    CHECK_EQ(inputs.analog(0), 0xB8u);
+    CHECK_EQ(inputs.analog(1), 0xFFu);
+    CHECK_EQ(bus.read_byte(0xC00002), 0xFFu);
+    for (int i = 0; i < 10; ++i) {
         inputs.update_analog();
     }
     CHECK_EQ(inputs.analog(0), InputManager::k_wheel_centre);
-    CHECK_EQ(inputs.analog(1), InputManager::k_pedal_released);
+
+    // Racing: steering is fast, and the wheel springs back on release.
+    inputs.set_input(In::P1Left, true);
+    inputs.update_analog();
+    CHECK_EQ(inputs.analog(0), 0x80u - InputManager::k_wheel_step);
+    for (int i = 0; i < 10; ++i) {
+        inputs.update_analog();
+    }
+    CHECK_EQ(inputs.analog(0), InputManager::k_wheel_left);
     inputs.set_input(In::P1Left, false);
+    for (int i = 0; i < 10; ++i) {
+        inputs.update_analog();
+    }
+    CHECK_EQ(inputs.analog(0), InputManager::k_wheel_centre);
+
+    // Both directions held: no turn. Braking also counts as racing.
+    inputs.set_input(In::P1Up, false);
     inputs.set_input(In::P1Down, true);
+    inputs.set_input(In::P1Right, true);
+    for (int i = 0; i < 40; ++i) {
+        inputs.update_analog();
+    }
+    CHECK_EQ(inputs.analog(0), InputManager::k_wheel_right);
+    CHECK_EQ(inputs.analog(1), InputManager::k_pedal_released);
+    CHECK_EQ(inputs.analog(2), 0xFFu);
+    inputs.set_input(In::P1Left, true);
+    inputs.update_analog();
+    CHECK_EQ(inputs.analog(0), InputManager::k_wheel_right - InputManager::k_wheel_step); // springs back
+    inputs.set_input(In::P1Left, false);
     for (int i = 0; i < 20; ++i) {
         inputs.update_analog();
     }
     CHECK_EQ(inputs.analog(0), InputManager::k_wheel_right);
-    CHECK_EQ(inputs.analog(2), 0xFFu);
 
     // The real I/O board reads the same values through its ADC.
     board->io_board().write(0xC000, 2);

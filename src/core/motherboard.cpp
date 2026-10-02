@@ -201,8 +201,18 @@ void Motherboard::run_frame()
     while (m_cycle_balance > 0) {
         const int64_t slice = std::min(m_cycle_balance, k_slice_cycles);
         int64_t ran = 0;
+        // The TGP DSP runs alongside the V60, instruction by instruction:
+        // the two share the copro RAM, so a DSP that lagged a whole slice
+        // behind would read data the V60 has already overwritten for its
+        // next request (in Virtua Racing: wrong collision and ground
+        // results, sending the car off into the void).
+        const bool tgp_active = m_tgp_copro->is_active();
         while (ran < slice) {
-            ran += m_cpu->execute_cycle();
+            const uint32_t cycles = m_cpu->execute_cycle();
+            ran += cycles;
+            if (tgp_active) {
+                m_tgp_copro->run(cycles);
+            }
         }
         m_cycle_balance -= ran;
         run_peripherals(static_cast<uint32_t>(ran));
@@ -236,11 +246,6 @@ void Motherboard::run_peripherals(uint32_t main_cycles)
     m_sound_eighths += static_cast<int64_t>(main_cycles) * 5;
     while (m_sound_eighths > 0) {
         m_sound_eighths -= static_cast<int64_t>(m_sound->step()) * 8;
-    }
-
-    // TGP coprocessor DSP (40 MHz / 3), when its ROMs are loaded.
-    if (m_tgp_copro->is_active()) {
-        m_tgp_copro->run(main_cycles);
     }
 
     // I/O board Z80 (4 MHz): a quarter cycle per V60 cycle, overshoot carried.

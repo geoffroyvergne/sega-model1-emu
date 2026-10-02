@@ -1,10 +1,12 @@
 // TGP coprocessor tests: the MB86233 DSP core (moves, ALU, branches, repeat,
 // stalls) and the copro board around it (FIFOs both ways, copro RAM with
 // auto-increment, table units, data ROM window), using small hand-assembled
-// DSP programs in the encodings of Virtua Racing's TGP firmware.
+// DSP programs in the encodings of Virtua Racing's TGP firmware; and the DSP
+// running alongside the V60 inside the Motherboard.
 
 #include "test_framework.hpp"
 
+#include "core/motherboard.hpp"
 #include "core/tgp_copro.hpp"
 
 #include <bit>
@@ -200,4 +202,58 @@ TEST_CASE(tgp_copro_sincos_table_and_data_rom_window)
     CHECK_EQ(as_float(pop(*copro)), 0.75f);  // 0x4100: second quarter, mirrored index 0x3F00
     CHECK_EQ(as_float(pop(*copro)), -0.25f); // 0x8100: index 0x100, sign flipped
     CHECK_EQ(pop(*copro), 0x5Au);            // data ROM word 0x8005
+}
+
+TEST_CASE(tgp_dsp_runs_alongside_the_v60)
+{
+    // The DSP answers each FIFO word by storing it in copro RAM word 5. The
+    // V60 sends a word and reads RAM word 5 two instructions later: the
+    // DSP, advancing with every V60 instruction, has answered by then. (On
+    // the board the DSP runs concurrently; batched once per 4,096-cycle
+    // slice, it would still be waiting and the V60 would read 0. Virtua
+    // Racing depends on this: its collision and ground queries go wrong,
+    // and the car leaves the track and the road disappears.)
+    auto board = std::make_unique<model1::Motherboard>();
+    TgpCopro& copro = board->tgp_copro();
+    const std::initializer_list<uint32_t> dsp = {
+        ldi(k_reg_x1, 0x100),         // 0: X1 = input FIFO
+        mov_x1_to_reg(k_reg_a),       // 1: A = next word (waits for it)
+        ldi(k_reg_b, 5),              // 2
+        mov_reg_to_io(k_reg_b, 0x00), // 3: copro RAM address register 0 = 5
+        mov_reg_to_io(k_reg_a, 0x01), // 4: RAM[5] = A
+        branch_always(1),             // 5
+    };
+    std::vector<uint8_t> bytes(TgpCopro::k_program_words * 4, 0);
+    std::size_t i = 0;
+    for (uint32_t word : dsp) {
+        for (int b = 0; b < 4; ++b) {
+            bytes[i * 4 + static_cast<std::size_t>(b)] = static_cast<uint8_t>(word >> (8 * b));
+        }
+        ++i;
+    }
+    CHECK(copro.load_program(bytes));
+    CHECK(copro.load_tables(std::vector<uint8_t>(TgpCopro::k_table_words * 4, 0)));
+    CHECK(copro.load_data_rom(std::vector<uint8_t>(TgpCopro::k_data_rom_words * 4, 0)));
+    board->reset();
+
+    // V60 program (work RAM B):
+    //   MOV.W #0x12345678, /0xD80000   send a word to the TGP
+    //   MOV.H #5, /0xD00000            copro RAM address = 5
+    //   MOV.W /0xD20000, /0x501800     read RAM[5] into work RAM
+    //   BR $
+    const uint32_t program = 0x501000;
+    const std::vector<uint8_t> v60 = {
+        0x2D, 0x80, 0xF4, 0x78, 0x56, 0x34, 0x12, 0xF3, 0x00, 0x00, 0xD8, 0x00,
+        0x1B, 0x80, 0xF4, 0x05, 0x00, 0xF3, 0x00, 0x00, 0xD0, 0x00,
+        0x2D, 0x80, 0xF3, 0x00, 0x00, 0xD2, 0x00, 0xF3, 0x00, 0x18, 0x50, 0x00,
+        0x6A, 0x00,
+    };
+    for (uint32_t k = 0; k < v60.size(); ++k) {
+        board->bus().write_byte(program + k, v60[k]);
+    }
+    board->cpu().set_pc(program);
+    board->run_frame();
+    CHECK(!board->cpu().is_halted());
+    CHECK_EQ(copro.ram_word(5), 0x12345678u);
+    CHECK_EQ(board->bus().read_long(0x501800), 0x12345678u);
 }

@@ -28,11 +28,23 @@ namespace model1 {
 //   0x5000-0x5003  horizontal scroll, tilemaps 0-3 (bit 15 = per-line mode)
 //   0x5004-0x5007  vertical scroll, tilemaps 0-3 (bit 15 = layer disabled);
 //                  bits 14-13 of words 0x5004 / 0x5006 select special
-//                  split modes for pairs 0/1 and 2/3 (not emulated)
+//                  split modes for pairs 0/1 and 2/3 (see below)
 //   0x6000-0x67FF  window mask for pair 0/1, 0x6800-0x6FFF for pair 2/3:
 //                  4 words per screen line, one bit per 8-pixel column
 //                  (bit 15 of word 0 = columns 0-7). Even tilemaps draw where
 //                  the bit is 0, odd tilemaps where it is 1.
+//
+// Special modes (as MAME's segaic24): the pair is drawn as one layer, both
+// tilemaps scrolled by the even tilemap's scroll values, window masks
+// ignored, and split in two at a line or a column:
+//   mode 1     split at line v = (-vscroll) & 0x1FF: the even tilemap above
+//              and the odd one below, swapped when bit 9 of -vscroll is 0
+//              (Virtua Racing's sky / landscape)
+//   mode 2, 3  split at column h = hscroll & 0x1FF: the even tilemap left
+//              and the odd one right, swapped when hscroll bit 9 is 0
+// With per-line horizontal scroll, each line uses its own value (for the
+// scroll in mode 1, for the scroll and the split column in modes 2 / 3).
+// Only tiles of the pass's priority are drawn, opaque pass included.
 //
 // Palette RAM (16 KB at 0x900000): 8192 16-bit colours, xBGR 5:5:5 with an
 // intensity bit (bit 15 clear = half brightness). Pen = palette * 16 + pixel.
@@ -76,6 +88,13 @@ private:
 
     // layer = tilemap * 2 + priority (0 = low, 1 = high), as in MAME.
     void draw_layer(int layer, DrawMode mode);
+    void draw_special_layer(std::size_t tilemap, uint16_t priority, DrawMode mode, uint16_t control);
+    // Draws pixels x0..x1-1 of screen line y from `tilemap` scrolled by
+    // (scroll_x, scroll_y). Window masks are the caller's business: with
+    // `mask_pair_base` != 0 the pair's mask decides which tilemap owns each
+    // column. Opaque draws ignore tile priority unless `filter_priority`.
+    void draw_span(std::size_t tilemap, int y, int x0, int x1, int scroll_x, int scroll_y, uint16_t priority,
+                   DrawMode mode, std::size_t mask_pair_base, bool filter_priority);
 
     [[nodiscard]] uint16_t tile_word(std::size_t index) const;
     [[nodiscard]] uint16_t char_word(std::size_t index) const;

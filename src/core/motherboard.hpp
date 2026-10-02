@@ -44,7 +44,9 @@ public:
                   "5 samples per 1,792 V60 cycles must equal 10 MHz / 224");
 
     // The frame is run in slices of this many V60 cycles (256 us); after
-    // each slice the UARTs and the sound CPU catch up.
+    // each slice the UARTs, the sound CPU and the I/O board catch up. The
+    // TGP DSP instead advances after every V60 instruction (it shares the
+    // copro RAM with the V60).
     static constexpr int64_t k_slice_cycles = 4096;
 
     // TGP host ports (real Model 1 addresses; each block mirrors over 128 KB).

@@ -27,7 +27,7 @@ cmake --build build-release
 ./build-release/model1 path/to/vr                          # an unzipped MAME "vr" ROM set
 ```
 
-Press **5** to insert a coin, then **↑** (accelerator) to pick a course and start. Steer with **← →** and brake with **↓**. The [Controls](#controls) section lists every key, and [ROM sets](#rom-sets) lists the files the emulator needs, including the shared `model1io` set.
+Press **5** to insert a coin. On the course screen, hold **→** until your course is highlighted, then press **↑** (accelerator) to start. Steer with **← →** and brake with **↓**. The [Controls](#controls) section lists every key, and [ROM sets](#rom-sets) lists the files the emulator needs, including the shared `model1io` set.
 
 ## Purpose
 
@@ -76,6 +76,12 @@ Both stand-ins follow the layouts MAME used before it switched to low-level emul
 - **Flags:** Zero, Sign, Overflow and Carry follow the hardware rules. For example, logic operations clear OV and leave CY unchanged, and byte/half results update only the low bits of a register.
 - **Stack checks:** every push and pop, including interrupt entry, is checked. A misaligned SP, or a stack access outside work RAM (an overflow on push, an underflow on pop), is logged as a warning (the first 8 times). Execution continues, because the V60 itself has no stack limits.
 - **Maskable interrupts:** pending requests are taken between instructions when PSW.IE is set. The CPU switches to the interrupt stack, saves PSW and PC, and jumps through the vector table. HALT waits for an interrupt; RETIS returns from one.
+- **Verified against MAME's V60:** a differential test (not in the repository) compiled MAME's V60 core standalone and ran it in lockstep with this one on Virtua Racing (attract mode, a coin, course select, a race and an off-track excursion: 80 million instructions). Every instruction was compared: registers, PC, PSW and the bytes written. The differences are the deliberate ones listed under [Known limitations](#known-limitations):
+  - CVTSW ties: −194.5 converts to −194 here and to −195 in MAME.
+  - CVTSW of infinity.
+  - The overflow flag of MUL.W and SHA.H, which VR never branches on.
+
+  Switching CVTSW to MAME's behaviour left the game's run unchanged.
 
 ### Memory map and bus (`src/core/bus.*`)
 - The real Model 1 layout: program and boot ROM, two work RAMs, display list, palette and colour RAM.
@@ -87,6 +93,7 @@ Both stand-ins follow the layouts MAME used before it switched to low-level emul
 - **Real TGP (Virtua Racing):** with the TGP program (`315-5573.bin`), tables (`opr14742`/`opr14743`) and data ROMs (`mpr-14898`–`14901`) loaded, the board is emulated at the hardware level, as in current MAME:
   - **MB86233 DSP** (`src/core/mb86233.*`), a port of MAME's core: loads, moves between registers, RAM, I/O and program memory, the float ALU (add, subtract, multiply, multiply-accumulate, divide, compare, conversions) and integer operations, repeat, loop counters, a 4-entry call stack. Floating-point mode only, no interrupts (as in MAME). 40 MHz / 3 instructions per second, in lockstep with the V60.
   - **The board** (`src/core/tgp_copro.*`): 16-word FIFOs both ways, an 8K-word copro RAM with four auto-incrementing address registers (stride 4 for vertex lists), the sin/cos, atan, 1/x and 1/√x table units, and the 2 MB data ROM window. On the board the V60 halts on an empty output FIFO or a full input FIFO; here the DSP runs on the spot until it can proceed.
+  - **Runs alongside the V60:** the DSP advances after every V60 instruction (5 DSP instructions per 6 V60 cycles), as it runs concurrently on the board. The two share the copro RAM. A DSP running in batches, once per 4,096-cycle slice, lagged up to about 500 V60 instructions behind, and then read RAM the V60 had already rewritten for its next request. In Virtua Racing that corrupted the collision and ground queries: the car could leave the track into a void where the road disappeared, with track pieces floating in the sky. A regression test sends a TGP request from V60 code and checks that the answer is ready two instructions later.
   - **Debugging:** `TgpCopro::set_trace(n)` logs FIFO traffic, `Mb86233::set_trace(n)` logs DSP instructions with registers.
   - **Old firmware dump:** the `315-5573.bin` with CRC32 `0xec913af2` (common in older sets) is a bad dump that MAME replaced in 0.197 (CRC32 `0x3335a19b`): with it the game hangs waiting for TGP results ([MAME Testers 07025](https://mametesters.org/view.php?id=7025)). The loader recognises it and says so.
 - **High-level TGP (fallback, Virtua Fighter):** without those ROMs, `src/core/tgp.*` stands in:
@@ -108,7 +115,10 @@ Both stand-ins follow the layouts MAME used before it switched to low-level emul
 - **Control panels** (`InputManager::Profile`, chosen by the ROM loader from the game):
   - **Virtua Fighter:** two joysticks and three buttons each, on ports B–D.
   - **Virtua Racing** (MAME's `vr` ports): the four view buttons VR1–VR3 on the system port (bits 5–7) and VR4 on port C bit 0; the shifter on port C bits 4 (down) and 5 (up). The steering wheel, accelerator and brake are analog, read through the ADC: wheel on channel 0 (centre `0x80`, lower to the left), accelerator on 1 and brake on 2 (released `0x30`, fully pressed `0xFF`), channel 3 unconnected (`0xFF`).
-  - On the keyboard the wheel and pedals are driven by held keys: once per frame each moves a step toward its target (full lock or full press) and springs back when released, like MAME's key-driven paddle and pedals.
+  - On the keyboard the wheel and pedals are driven by held keys, moving a step per frame toward their target (full lock or full press). The pedals spring back when released.
+  - **The wheel acts like the cabinet's.** While a pedal is held (racing), it turns quickly and springs back to centre on release. With no pedal held (menus), it turns slowly (about half a second from centre to full lock) and stays where it's left.
+    - Why: Virtua Racing picks the course from the wheel's absolute position: centred is course 1, about `0xB0` course 2, `0xD0` and up course 3. A keyboard wheel that always re-centred, like MAME's key-driven paddle, would always fall back to course 1.
+    - The spring starts ⅓ second after a pedal goes down, so the wheel holds still while the game reads the confirmation.
 - **Fallback stand-in:** without the firmware file (it's optional in the ROM loader), `InputManager` plays the board at a high level: it writes the ports into the shared RAM using MAME's former high-level layout (the four analog channels at bytes 0–3 and again at 4–7, system port at 8, players at 9 and 10, lamps at 15) and acknowledges the game's commands in byte `0x20` once per frame without performing them.
 - **Keyboard mapping:** keys are matched by physical position, so the layout works on QWERTY and AZERTY.
   - Keys with the same function (W and ↑) can be held together without releasing each other.
@@ -119,6 +129,7 @@ Both stand-ins follow the layouts MAME used before it switched to low-level emul
 - The Model 1's 2D hardware, the Sega System 24 tilemap chip, renders each 496×384 frame from tile RAM, character RAM and palette RAM.
 - **Tilemaps:** four 512×512-pixel tilemaps of 8×8 tiles, 4 bits per pixel, with 16-colour palettes. Each pair of tilemaps shares the screen through a per-line window mask with 8-pixel columns.
 - **Scrolling:** horizontal and vertical scroll per tilemap, with optional per-line horizontal scroll and a per-tilemap disable bit.
+- **Split modes:** a tilemap pair can be drawn as one layer split at a line (mode 1) or a column (modes 2/3), as MAME's `segaic24`. Virtua Racing draws its sky and landscape this way (see [2D layers](#2d-layers-system-24-tilemap-chip)).
 - **Layer order:** the board's fixed order. Low-priority tilemaps 3 and 2 form an opaque background, then tilemaps 1 and 0 draw with transparency, then (once implemented) the 3D polygons, then every tilemap's high-priority tiles on top for HUD and text.
 - **Colours:** palette entries use the Model 1 format (xBGR 5:5:5 plus an intensity bit) and are decoded once per frame.
 - **Speed:** with both demos running, a whole frame (2D layers plus polygons) takes about 8 ms in a Debug build and under 2 ms optimized, well within the 16.7 ms frame budget.
@@ -176,6 +187,7 @@ The real Model 1 sound board, from MAME's `segam1audio`: a **Motorola 68000 at 1
 - A 60 Hz frame loop paced by the high-resolution counter; it measured exactly 60.0 FPS.
 - **Each frame:**
   - The V60 runs a 266,666-cycle budget. Overshoot is carried into the next frame so the long-run rate is exact.
+  - The TGP DSP advances after every V60 instruction (5 DSP instructions per 6 V60 cycles).
   - The frame is run in 4,096-cycle slices (256 µs). After each slice, the UARTs advance 1 tick per 32 V60 cycles, the 68000 runs exactly 5/8 of the V60's cycles (about 166,666 per frame), and the sound chips render 5 samples per 1,792 V60 cycles (about 744 per frame). Remainders are carried over.
   - The frame's audio is handed to the host output: 735 frames at 44.1 kHz.
   - The frame is composed: tilemap background, 3D polygons, then tilemap foreground.
@@ -245,12 +257,12 @@ main loop, once per 1/60 s:
   2. Motherboard::run_frame()
        a. InputManager::update_analog(): wheel and pedals move one step toward the held keys
        b. V60 executes instructions until the frame's cycle budget is spent
-          (each instruction is charged 8 cycles; interrupts are taken between instructions),
-          in 4,096-cycle slices; after each slice, for the same stretch of time:
+          (each instruction is charged 8 cycles; interrupts are taken between instructions);
+          after each instruction the TGP DSP catches up (5 instructions per 6 V60 cycles),
+          when its ROMs are loaded; it also runs on the spot whenever the V60 waits on a FIFO.
+          In 4,096-cycle slices; after each slice, for the same stretch of time:
             UARTs advance (1 serial clock tick per 32 V60 cycles)
             68000 sound CPU catches up (5 cycles per 8 V60 cycles)
-            TGP DSP runs (5 instructions per 6 V60 cycles), when its ROMs are loaded;
-              it also runs on the spot whenever the V60 waits on a FIFO
             I/O board Z80 runs (1 T-state per 4 V60 cycles), when its firmware is loaded;
               otherwise the InputManager stand-in answers once per frame
             MultiPCMs render their output (5 samples per 1,792 V60 cycles)
@@ -303,7 +315,7 @@ tests/test_v60_core.cpp     V60 tests: reset, NOP, MOV, ADD/SUB flags, stack, su
 tests/test_v60_addressing_math.cpp  V60 tests: every addressing mode, MUL/DIV, division by zero, TEST
 tests/test_v60_boot.cpp     VR boot code: UPDPSW, MOVEA, string moves, IN/OUT, ADDC/SUBC, CMP, INC/DEC, ADD/SUB sizes, LDPR/STPR, JSR, MOVS/MOVZ, DBcc/TB, ROT/ROTC, REM/REMU, bit fields, SETF, NEG, floating point, MOVT, SCHCU/SKPCU, MOVCD/MOVCFD, system registers, I/O stub
 tests/test_m68000.cpp       68000 tests: MOVE to SR, CLR, MOVE addressing modes, LEA, DBcc, branches, BTST/BSET/BCLR/BCHG, ADDQ/SUBQ, shifts/rotates, SWAP, immediate ALU group, ADD/SUB family, CMP/CMPA/CMPM/EOR, OR/AND/MUL/DIV/BCD/EXG, TST, sound latch
-tests/test_tilemap.cpp      2D layer tests: decoding, scrolling, layering, worst-case safety, demo HUD text
+tests/test_tilemap.cpp      2D layer tests: decoding, scrolling, layering, split modes, worst-case safety, demo HUD text
 tests/test_polygons.cpp     3D tests: fill, depth sort, clipping, stipple, colours, lists, 0x05/0x06 uploads and bounds, 3D objects (projection, culling, frustum clipping, lighting), cube demo culling
 tests/test_sound.cpp        Sound tests: UART timing and errors, 68000 skeleton, V60 -> sound command, lockstep cycles
 tests/test_multipcm.cpp     MultiPCM tests: registers, pitch, 8/12-bit samples, loops, pan, banks, envelopes, attenuation glides, vibrato/tremolo, 440 Hz tone, audio rate
@@ -312,7 +324,7 @@ tests/test_audio_host.cpp   host_tests (SDL): audio device open/close with a dea
 tests/test_rom_loader.cpp   ROM loader tests: mock VF/VR sets in temp folders, every destination, error cases
 tests/test_io_board.cpp     I/O board: shared RAM, stand-in, EEPROM protocol and timing, 315-5338A, ADC, a small Z80 firmware, Virtua Racing / Virtua Fighter control panels
 tests/test_z80.cpp          Z80 tests: flags, DAA, 16-bit, stack, timing, IX/IY and DDCB, block ops, interrupts, I/O
-tests/test_tgp_copro.cpp    TGP tests: DSP moves, ALU, repeat, stalls; FIFOs both ways, copro RAM, tables, data ROM
+tests/test_tgp_copro.cpp    TGP tests: DSP moves, ALU, repeat, stalls; FIFOs both ways, copro RAM, tables, data ROM; DSP alongside the V60
 ```
 
 ## Building
@@ -355,8 +367,8 @@ Only the macOS build has been tested so far. The Linux and Windows steps are sta
 
 | Build | Speed |
 |---|---|
-| Release | about 236–250 frames per second (about 4× real time) |
-| Debug (default; `-O1` with debug info, see `MODEL1_DEBUG_OPTIMIZE`) | about 213 frames per second (3.5× real time) |
+| Release | about 234 frames per second (3.9× real time) |
+| Debug (default; `-O1` with debug info, see `MODEL1_DEBUG_OPTIMIZE`) | about 196 frames per second (3.3× real time) |
 | Debug at `-O0` (`MODEL1_DEBUG_OPTIMIZE=OFF`) | about 43 frames per second (72% of real time): the game runs slow and the sound stutters, and the emulator logs a warning |
 
 A Release build:
@@ -431,7 +443,7 @@ Keys are matched by physical position: on an AZERTY keyboard, "W A S D" are the 
 
 | Key | Control |
 |---|---|
-| ← / → (or A / D) | Steer. Holding a key turns the wheel a step per frame toward full lock; releasing it recentres the wheel |
+| ← / → (or A / D) | Steer. While a pedal is held, the wheel turns quickly and re-centres on release; with no pedal held (course selection) it turns slowly and stays where you leave it |
 | ↑ (or W) | Accelerator. Ramps up while held, springs back when released |
 | ↓ (or S) | Brake, likewise |
 | J / K / L (or Z / X / C) | View buttons VR1 (red), VR2 (blue), VR3 (yellow) |
@@ -441,7 +453,7 @@ Keys are matched by physical position: on an AZERTY keyboard, "W A S D" are the 
 | 1 | Start (hold it while pressing the accelerator on the course screen for the 7-speed manual gearbox) |
 | F2 / 9 | Test / service switches |
 
-To play: insert a coin (5), choose a course with ← →, then press ↑ to start.
+To play: insert a coin (5). On the course screen, hold → until your course is highlighted (Big Forest is the default; about ¼ second gives Bay Bridge, ½ second Acropolis; ← goes back), release, then press ↑ to start.
 
 **Virtua Fighter and all keys:**
 
@@ -567,7 +579,7 @@ Running emulator tests
   ...
   [PASS] rom_bad_folders_and_game_names
 
-254 passed, 0 failed
+257 passed, 0 failed
 ```
 
 The exit code is 0 only if every selected test passed.
@@ -736,8 +748,17 @@ Sample header (12 bytes per sample at the start of sample ROM): start address (3
 | `0x0000–0x3FFF` | Tilemaps 0–3, 64×64 entries each. Entry bits 13–0: tile number; 14–7: palette (overlaps the tile number's top bits, so palette *p* selects tiles from block *p* × 128); 15: high priority |
 | `0x4000–0x47FF` | Per-line horizontal scroll tables, 512 words per tilemap |
 | `0x5000–0x5003` | Horizontal scroll, tilemaps 0–3: 9-bit value; bit 15 enables per-line scroll. A value *v* moves the layer right by *v* pixels |
-| `0x5004–0x5007` | Vertical scroll, tilemaps 0–3: 9-bit value; bit 15 disables the tilemap; bits 14–13 select special split modes (not emulated) |
+| `0x5004–0x5007` | Vertical scroll, tilemaps 0–3: 9-bit value; bit 15 disables the tilemap; bits 14–13 (of tilemaps 0 and 2) select the pair's special split mode (below) |
 | `0x6000–0x67FF`, `0x6800–0x6FFF` | Window masks for pairs 0/1 and 2/3: 4 words per line, one bit per 8-pixel column. Even tilemaps draw where the bit is 0, odd ones where it is 1 |
+
+**Special split modes** (bits 14–13 of `0x5004` for pair 0/1, `0x5006` for pair 2/3): the two tilemaps of the pair are drawn as one layer. Both scroll with the even tilemap's values, the window masks are ignored, and the screen is split in two:
+
+| Mode | Split | Which tilemap where |
+|---|---|---|
+| 1 | At line (−vscroll) & `0x1FF` | Even tilemap above, odd below; swapped when bit 9 of −vscroll is 0 |
+| 2, 3 | At column hscroll & `0x1FF` | Even tilemap left, odd right; swapped when hscroll bit 9 is 0 |
+
+With per-line horizontal scroll, each line uses its own value (in modes 2/3 that moves the split column too). Only tiles of the pass's priority are drawn, opaque pass included. Virtua Racing uses mode 1 on tilemaps 2/3 for its sky and landscape. Drawn as normal tilemaps, the landscape wrapped around into the top of the screen in place of the sky, leaving a band of a different colour as the horizon moved down.
 
 **Palette RAM** (`0x900000`) colours, pen = palette × 16 + pixel:
 
@@ -777,13 +798,12 @@ Display lists are 16-bit words; a long is two words, low word first. The **list 
 ## Known limitations
 
 - **Virtua Racing:** playable, with these gaps:
-  - **3D:** objects above the HUD (`0x41`) are drawn below it; a few stray single-pixel points appear in some scenes (degenerate polygons drawn as points). The renderer is a high-level simulation like MAME's, so exact pixel coverage and the colour/luminance path may differ from the real board.
-  - **2D:** the tilemap chip's special split modes are drawn as normal mode (a warning is logged); VR uses special mode 1 on tilemaps 2/3.
+  - **3D:** objects above the HUD (`0x41`) are drawn below it; a few stray single-pixel points appear in some scenes (degenerate polygons drawn as points). The player car's stippled shadow reaches further down the screen than its rear tyres. It's a separate object (the car's silhouette flattened onto the ground, extending under the rear wing), and our renderer draws it exactly as MAME's would; whether the real board shows the same is unverified. The renderer is a high-level simulation like MAME's, so exact pixel coverage and the colour/luminance path may differ from the real board.
   - **Sound:** on a boot with valid saved settings, the first sound command (`0x81`) can be lost (see *Timing* below).
   - **Drive board** (force feedback, port E) isn't emulated.
 - **Virtua Fighter:** the set loads, but its TGP program (`315-5724.bin`) and polygon ROMs aren't wired up, so it doesn't run. It falls back on the high-level TGP, which has only a few functions.
 - **CPU:** some V60 instructions are still missing, notably PREPARE/DISPOSE, the downward string searches (SCHCD/SKPCD), string compares, the other bit-string instructions and double-precision floating point (MAME doesn't implement those either). Every instruction is charged a flat 8 cycles.
-- **Floating point:** single precision, IEEE results; FPU exceptions (division by zero, overflow) aren't raised. CVTSW rounds to nearest-even by default (MAME rounds halves away from zero).
+- **Floating point:** single precision, IEEE results; FPU exceptions (division by zero, overflow) aren't raised. CVTSW rounds to nearest-even by default (MAME rounds halves away from zero), and converts out-of-range values and infinity to `0x80000000` (MAME's result depends on the host: 0 on x86, `0xFFFFFFFF` on ARM). Virtua Racing converts an infinity from a TGP division every game frame during a race; switching to MAME's behaviour changes nothing visible.
 - **Division by zero** leaves the destination unchanged, sets OV and logs an error; the V60's zero-divide exception is not emulated. Setting OV is our choice: MAME leaves it clear. Exceptions in general (including reserved addressing modes) halt the CPU instead of trapping.
 - **Flag rules that differ from MAME:** signed MUL sets OV when the result doesn't fit in the operand size; MAME sets it whenever the upper bits of the product are non-zero, which also flags small negative results. DIVX/DIVUX set OV and leave the destination unchanged when the quotient doesn't fit in 32 bits; MAME doesn't handle that case. Neither has been checked against NEC's documentation.
 - **SHA overflow on left shifts** uses the standard definition (the result doesn't fit in the operand size). MAME only checks the bits shifted out, so the two differ when a shift changes the sign. This has not been checked against NEC's documentation.
@@ -800,7 +820,7 @@ Display lists are 16-bit words; a long is two words, low word first. The **list 
 
 Planned next steps, roughly in order:
 
-1. **Virtua Racing polish:** draw `0x41` objects above the HUD, remove the stray points, the tilemap chip's special mode 1, and save the EEPROM between runs.
+1. **Virtua Racing polish:** draw `0x41` objects above the HUD, remove the stray points, and save the EEPROM between runs.
 2. **Interrupt controller** at `0xE00000`, with level-triggered VBlank and a real acknowledge.
 3. **Virtua Fighter:** wire up its TGP program (`315-5724.bin`) and polygon ROMs, then fix whatever its code needs next.
 4. **Real video timing:** 57.52 Hz, with VBlank at line 384.

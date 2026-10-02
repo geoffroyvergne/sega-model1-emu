@@ -134,71 +134,114 @@ void TilemapRenderer::draw_layer(int layer, DrawMode mode)
     if ((vscroll & k_layer_disabled) != 0) {
         return;
     }
-
     if ((control & k_special_modes) != 0) {
-        // Split-screen / window special modes are not emulated; the layer is
-        // drawn in the normal mode instead. Logged once per change.
         uint16_t& logged = m_logged_special_mode[tilemap >> 1];
         if (logged != (control & k_special_modes)) {
             logged = control & k_special_modes;
-            std::cerr << "[Tilemap] WARNING: special mode " << ((control & k_special_modes) >> 13)
-                      << " for tilemaps " << (tilemap & 2) << "/" << ((tilemap & 2) + 1)
-                      << " not emulated, drawing in normal mode\n";
+            std::cerr << "[Tilemap] Special mode " << ((control & k_special_modes) >> 13) << " on tilemaps "
+                      << (tilemap & 2) << "/" << ((tilemap & 2) + 1) << '\n';
         }
+        draw_special_layer(tilemap, priority, mode, control);
+        return;
     }
 
     const bool line_scroll = (hscroll & k_line_scroll_on) != 0;
-    const std::size_t map_base = tilemap * k_tilemap_words;
     const std::size_t mask_base = tilemap >= 2 ? k_mask_base_pair23 : k_mask_base_pair01;
-    const bool odd_tilemap = (tilemap & 1) != 0;
-    const bool transparent = mode == DrawMode::Transparent;
-
     for (int y = 0; y < k_height; ++y) {
         // Scroll values are negated for X, as on the chip.
         const uint16_t line_h = line_scroll
             ? tile_word(k_line_scroll_base + tilemap * k_line_scroll_stride + static_cast<std::size_t>(y))
             : hscroll;
-        const int scroll_x = (-static_cast<int>(line_h)) & k_map_size_mask;
-        const int map_y = (static_cast<int>(vscroll) + y) & k_map_size_mask;
-        const std::size_t map_row = map_base + static_cast<std::size_t>(map_y >> 3) * 64;
-        const std::size_t char_row = static_cast<std::size_t>(map_y & 7) * 2;
+        draw_span(tilemap, y, 0, k_width, -static_cast<int>(line_h), vscroll, priority, mode, mask_base, false);
+    }
+}
 
-        // Window mask for this line: 4 words, one bit per 8-pixel column.
-        const std::size_t mask_row = mask_base + static_cast<std::size_t>(y) * 4;
-        const std::array<uint16_t, 4> mask = {tile_word(mask_row), tile_word(mask_row + 1),
-                                              tile_word(mask_row + 2), tile_word(mask_row + 3)};
+// A tilemap pair in a split mode, drawn by the even tilemap's layer (the odd
+// one draws nothing). See the header for the modes.
+void TilemapRenderer::draw_special_layer(std::size_t tilemap, uint16_t priority, DrawMode mode, uint16_t control)
+{
+    if ((tilemap & 1) != 0) {
+        return;
+    }
+    const uint16_t hscroll = tile_word(k_hscroll_base + tilemap);
+    const uint16_t vscroll = tile_word(k_vscroll_base + tilemap);
+    const bool line_scroll = (hscroll & k_line_scroll_on) != 0;
+    const unsigned special = (control & k_special_modes) >> 13;
 
-        uint16_t* pen_row = &m_pens[static_cast<std::size_t>(y) * k_width];
-
-        // Walk the line one tile row (up to 8 pixels) at a time.
-        int x = 0;
-        while (x < k_width) {
-            const int map_x = (x + scroll_x) & k_map_size_mask;
-            const int first_pixel = map_x & 7;
-            const int run = std::min(8 - first_pixel, k_width - x);
-
-            const uint16_t entry = tile_word(map_row + static_cast<std::size_t>(map_x >> 3));
-            if (transparent && (entry >> 15) != priority) {
-                x += run;
-                continue;
+    for (int y = 0; y < k_height; ++y) {
+        const uint16_t h = line_scroll
+            ? tile_word(k_line_scroll_base + tilemap * k_line_scroll_stride + static_cast<std::size_t>(y))
+            : hscroll;
+        const int scroll_x = -static_cast<int>(h & k_map_size_mask);
+        if (special == 1) {
+            // Split at a line: which tilemap is on top depends on bit 9.
+            const auto negated = static_cast<uint16_t>(-static_cast<int>(vscroll));
+            const int split = negated & k_map_size_mask;
+            std::size_t first = tilemap ^ ((negated & 0x200) == 0 ? 1u : 0u);
+            if (y >= split) {
+                first ^= 1;
             }
-            const std::size_t char_base = static_cast<std::size_t>(entry & k_tile_mask) * 16 + char_row;
-            // 8 pixels of this tile row, leftmost pixel in bits 31-28.
-            const uint32_t row_pixels = (static_cast<uint32_t>(char_word(char_base)) << 16) | char_word(char_base + 1);
-            const auto pen_base = static_cast<uint16_t>(((entry >> 7) & 0xFF) * 16);
+            draw_span(first, y, 0, k_width, scroll_x, vscroll, priority, mode, 0, true);
+        } else {
+            // Split at a column (the scroll value doubles as the split).
+            const int split = std::min(static_cast<int>(h & k_map_size_mask), k_width);
+            const std::size_t first = tilemap ^ ((h & 0x200) == 0 ? 1u : 0u);
+            draw_span(first, y, 0, split, scroll_x, vscroll, priority, mode, 0, true);
+            draw_span(first ^ 1, y, split, k_width, scroll_x, vscroll, priority, mode, 0, true);
+        }
+    }
+}
 
-            for (int i = 0; i < run; ++i, ++x) {
+void TilemapRenderer::draw_span(std::size_t tilemap, int y, int x0, int x1, int scroll_x, int scroll_y,
+                                uint16_t priority, DrawMode mode, std::size_t mask_pair_base, bool filter_priority)
+{
+    const std::size_t map_base = tilemap * k_tilemap_words;
+    const bool odd_tilemap = (tilemap & 1) != 0;
+    const bool transparent = mode == DrawMode::Transparent;
+    const int origin_x = scroll_x & k_map_size_mask;
+    const int map_y = (scroll_y + y) & k_map_size_mask;
+    const std::size_t map_row = map_base + static_cast<std::size_t>(map_y >> 3) * 64;
+    const std::size_t char_row = static_cast<std::size_t>(map_y & 7) * 2;
+
+    // Window mask for this line: 4 words, one bit per 8-pixel column.
+    std::array<uint16_t, 4> mask{};
+    if (mask_pair_base != 0) {
+        const std::size_t mask_row = mask_pair_base + static_cast<std::size_t>(y) * 4;
+        mask = {tile_word(mask_row), tile_word(mask_row + 1), tile_word(mask_row + 2), tile_word(mask_row + 3)};
+    }
+
+    uint16_t* pen_row = &m_pens[static_cast<std::size_t>(y) * k_width];
+
+    // Walk the span one tile row (up to 8 pixels) at a time.
+    int x = x0;
+    while (x < x1) {
+        const int map_x = (x + origin_x) & k_map_size_mask;
+        const int first_pixel = map_x & 7;
+        const int run = std::min(8 - first_pixel, x1 - x);
+
+        const uint16_t entry = tile_word(map_row + static_cast<std::size_t>(map_x >> 3));
+        if ((transparent || filter_priority) && (entry >> 15) != priority) {
+            x += run;
+            continue;
+        }
+        const std::size_t char_base = static_cast<std::size_t>(entry & k_tile_mask) * 16 + char_row;
+        // 8 pixels of this tile row, leftmost pixel in bits 31-28.
+        const uint32_t row_pixels = (static_cast<uint32_t>(char_word(char_base)) << 16) | char_word(char_base + 1);
+        const auto pen_base = static_cast<uint16_t>(((entry >> 7) & 0xFF) * 16);
+
+        for (int i = 0; i < run; ++i, ++x) {
+            if (mask_pair_base != 0) {
                 // Window mask: which tilemap of the pair owns this 8-pixel column.
                 const bool mask_bit = ((mask[static_cast<std::size_t>(x >> 7)] << ((x & 127) >> 3)) & 0x8000) != 0;
                 if (mask_bit != odd_tilemap) {
                     continue;
                 }
-                const auto pixel = static_cast<uint16_t>((row_pixels >> (28 - 4 * (first_pixel + i))) & 0xF);
-                if (transparent && pixel == 0) {
-                    continue;
-                }
-                pen_row[x] = static_cast<uint16_t>(pen_base + pixel);
             }
+            const auto pixel = static_cast<uint16_t>((row_pixels >> (28 - 4 * (first_pixel + i))) & 0xF);
+            if (transparent && pixel == 0) {
+                continue;
+            }
+            pen_row[x] = static_cast<uint16_t>(pen_base + pixel);
         }
     }
 }

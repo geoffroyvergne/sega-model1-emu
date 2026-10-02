@@ -19,6 +19,7 @@ void InputManager::reset()
     m_player1 = k_idle_mask;
     m_player2 = k_idle_mask;
     m_steer_left = m_steer_right = m_accelerate = m_brake = false;
+    m_pedal_frames = 0;
     reset_analog();
     publish();
 }
@@ -54,12 +55,17 @@ void InputManager::update_analog()
     if (m_profile != Profile::VirtuaRacing) {
         return;
     }
-    // Wheel: a paddle as in MAME, lower values to the left.
-    int wheel_target = k_wheel_centre;
+    // Wheel: a paddle as in MAME, lower values to the left. Racing (a pedal
+    // held long enough): fast, self-centring. Menus (no pedal): slow, and it
+    // stays where it is left, as the cabinet's wheel does.
+    m_pedal_frames = (m_accelerate || m_brake) ? std::min(m_pedal_frames + 1, k_spring_delay_frames) : 0;
+    const bool racing = m_pedal_frames >= k_spring_delay_frames;
     if (m_steer_left != m_steer_right) {
-        wheel_target = m_steer_left ? k_wheel_left : k_wheel_right;
+        m_analog[0] = approach(m_analog[0], m_steer_left ? k_wheel_left : k_wheel_right,
+                               racing ? k_wheel_step : k_wheel_menu_step);
+    } else if (racing) {
+        m_analog[0] = approach(m_analog[0], k_wheel_centre, k_wheel_step);
     }
-    m_analog[0] = approach(m_analog[0], wheel_target, k_wheel_step);
     m_analog[1] = approach(m_analog[1], m_accelerate ? 0xFF : k_pedal_released, k_pedal_step);
     m_analog[2] = approach(m_analog[2], m_brake ? 0xFF : k_pedal_released, k_pedal_step);
     publish();

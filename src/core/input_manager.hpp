@@ -73,13 +73,23 @@ public:
     //               2 brake (0x30 released, 0xFF fully pressed)
     //     Joystick left / right steer, up accelerates, down brakes;
     //     buttons 1-4 are VR1-VR4, 5 / 6 shift down / up.
+    //     The keyboard wheel behaves like the cabinet's: while a pedal is
+    //     pressed (racing) it turns quickly and springs back to centre on
+    //     release; with no pedal pressed (menus) it turns slowly and stays
+    //     where it is left. The game picks the course from the wheel's
+    //     position (centre = course 1, turned right = courses 2 and 3), so
+    //     a self-centring wheel would always fall back to course 1. The
+    //     spring starts k_spring_delay_frames after a pedal goes down, so
+    //     the wheel holds still while the game reads the confirmation.
     enum class Profile { VirtuaFighter, VirtuaRacing };
     static constexpr std::size_t k_analog_channels = 4;
     static constexpr uint8_t k_wheel_centre = 0x80;
     static constexpr uint8_t k_wheel_left = 0x00;
     static constexpr uint8_t k_wheel_right = 0xFF;
     static constexpr uint8_t k_pedal_released = 0x30;
-    static constexpr int k_wheel_step = 0x10;  // per frame while steering / recentring
+    static constexpr int k_wheel_step = 0x10;  // per frame while steering / recentring (pedal pressed)
+    static constexpr int k_wheel_menu_step = 0x04;   // per frame with no pedal pressed: centre to lock in ~0.5 s
+    static constexpr int k_spring_delay_frames = 20; // pedal held this long before the wheel self-centres
     static constexpr int k_pedal_step = 0x20;  // per frame while pressing / releasing
 
     static constexpr uint16_t k_idle_mask = 0xFFFF;
@@ -150,6 +160,7 @@ private:
     Profile m_profile = Profile::VirtuaFighter;
     std::array<uint8_t, k_analog_channels> m_analog{};
     bool m_steer_left = false, m_steer_right = false, m_accelerate = false, m_brake = false;
+    int m_pedal_frames = 0; // consecutive frames with a pedal key held
 };
 
 } // namespace model1
